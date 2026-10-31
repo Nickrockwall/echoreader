@@ -6,6 +6,7 @@ import type {
   DictResult,
   FuriganaResult,
   Lang,
+  OfflineStatus,
   SearchResult,
   SourceId,
   TocPage,
@@ -43,6 +44,12 @@ export const api = {
   tts: (req: TtsRequest) => post<TtsResult>('/tts', req),
   lookup: (req: DictLookupRequest, signal?: AbortSignal) => post<DictResult>('/dict/lookup', req, signal),
   furigana: (texts: string[]) => post<FuriganaResult>('/ja/furigana', { texts }),
+  offline: {
+    status: (source: SourceId, id: string) => get<OfflineStatus>(`/${source}/books/${encodeURIComponent(id)}/offline`),
+    start: (source: SourceId, id: string) => post<OfflineStatus>(`/${source}/books/${encodeURIComponent(id)}/offline`, {}),
+    cancel: (source: SourceId, id: string) =>
+      get<OfflineStatus>(`/${source}/books/${encodeURIComponent(id)}/offline`, undefined, { method: 'DELETE' }),
+  },
   vocab: {
     list: () => get<VocabItem[]>('/vocab'),
     save: (item: VocabInput) => post<VocabItem>('/vocab', item),

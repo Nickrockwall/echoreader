@@ -142,6 +142,17 @@ export interface FuriganaRequest {
 /** Per input text, ruby spans [start, end, reading] over that text. */
 export type FuriganaResult = [number, number, string][][];
 
+// ---- Offline books ---------------------------------------------------------------
+
+export interface OfflineStatus {
+  state: 'none' | 'running' | 'done' | 'error';
+  /** Chapters fetched so far, out of `total`. */
+  done: number;
+  total: number;
+  finishedAt?: string;
+  error?: string;
+}
+
 // ---- Vocabulary book -------------------------------------------------------------
 
 export interface VocabInput {

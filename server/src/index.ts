@@ -7,6 +7,7 @@ import type { FuriganaRequest, Lang, SourceId, TtsRequest } from '../../shared/t
 import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
+import { cancelOffline, offlineStatus, startOffline } from './sources/offline.ts';
 import { audioPath, synthesize, VOICES } from './tts/edgeTTS.ts';
 import { deleteVocab, listVocab, saveVocab, vocabToAnki } from './user/vocab.ts';
 
@@ -46,6 +47,21 @@ app.get('/api/:source/books/:id', async (req, res) => {
 
 app.get('/api/:source/books/:id/toc', async (req, res) => {
   res.json(await adapter(req).toc(req.params.id, positiveInt(req.query.page)));
+});
+
+app.get('/api/:source/books/:id/offline', (req, res) => {
+  adapter(req);
+  res.json(offlineStatus(req.params.source as SourceId, req.params.id));
+});
+
+app.post('/api/:source/books/:id/offline', (req, res) => {
+  adapter(req);
+  res.json(startOffline(req.params.source as SourceId, req.params.id));
+});
+
+app.delete('/api/:source/books/:id/offline', (req, res) => {
+  adapter(req);
+  res.json(cancelOffline(req.params.source as SourceId, req.params.id));
 });
 
 app.get('/api/:source/books/:id/chapters/:index', async (req, res) => {

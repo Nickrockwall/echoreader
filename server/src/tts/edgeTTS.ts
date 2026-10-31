@@ -14,6 +14,8 @@ export const VOICES: Record<Lang, string[]> = {
 const AUDIO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.cache/tts');
 const MAX_CHARS = 2000;
 const MAX_CONCURRENT = 3;
+/** First attempt immediately, then two retries with growing pauses. */
+const RETRY_DELAYS_MS = [0, 1000, 3000];
 
 // ---- Concurrency gate: the Edge endpoint throttles bursts of parallel sockets ----
 
@@ -103,14 +105,18 @@ export function synthesize(text: string, lang: Lang, voice?: string): Promise<Tt
     }
 
     const { audio, parts } = await withSlot(async () => {
-      try {
-        return await synthesizeOnce(text, chosen);
-      } catch {
-        // One retry: the socket occasionally drops under load.
-        return synthesizeOnce(text, chosen).catch((err: Error) => {
-          throw new UpstreamError(`语音合成失败：${err.message}`);
-        });
+      // The service drops sockets under load and answers bursts (fast skipping ahead) with 429s,
+      // so back off between attempts rather than hammering it again at once.
+      let lastError: Error | undefined;
+      for (const wait of RETRY_DELAYS_MS) {
+        if (wait) await new Promise((r) => setTimeout(r, wait));
+        try {
+          return await synthesizeOnce(text, chosen);
+        } catch (err) {
+          lastError = err as Error;
+        }
       }
+      throw new UpstreamError(`语音合成失败：${lastError?.message}`);
     });
 
     const result: TtsResult = { id, voice: chosen, audio: `/api/tts/audio/${id}.mp3`, words: alignWords(text, parts) };

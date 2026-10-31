@@ -4,6 +4,7 @@ import type { BookDetail, BookSummary, TocPage } from '../../../../shared/types.
 import { api } from '../../lib/api.ts';
 import { useReaderStore } from '../../store/useReaderStore.ts';
 import { Cover } from './Cover.tsx';
+import { OfflineControl } from './OfflineControl.tsx';
 
 const FRONT_MATTER = 'Front matter';
 
@@ -100,6 +101,8 @@ export function BookDetailPanel({ summary, onBack }: { summary: BookSummary; onB
             </div>
           </div>
         </section>
+
+        {detail && <OfflineControl key={`${detail.source}:${detail.id}`} book={detail} />}
 
         {book.summary && (
           <div className="px-6 pb-6">
