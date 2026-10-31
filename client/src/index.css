@@ -228,6 +228,13 @@ body {
   }
 }
 
+@keyframes sheet-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

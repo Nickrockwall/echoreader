@@ -1,10 +1,11 @@
 import * as Popover from '@radix-ui/react-popover';
-import { LoaderCircle, Play, Repeat1, Volume2 } from 'lucide-react';
+import { LoaderCircle, Play, Repeat1, Star, Volume2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { DictEntry, DictResult } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
 import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
 import { useReaderStore, type LookupTarget } from '../../store/useReaderStore.ts';
+import { useVocabStore, vocabKey } from '../../store/useVocabStore.ts';
 
 const EN_POS: Record<string, string> = {
   noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', preposition: '介词', conjunction: '连词',
@@ -119,6 +120,10 @@ export function WordPopover() {
   const lookup = useReaderStore((s) => s.lookup);
   const closeLookup = useReaderStore((s) => s.closeLookup);
   const pickToken = useReaderStore((s) => s.pickToken);
+  const vocab = useVocabStore((s) => s.items);
+  const saveVocab = useVocabStore((s) => s.save);
+  const removeVocab = useVocabStore((s) => s.remove);
+  const [saveError, setSaveError] = useState(false);
   const [state, setState] = useState<{ key: string; result?: DictResult; error?: string } | null>(null);
   const [speaking, setSpeaking] = useState(false);
 
@@ -134,6 +139,8 @@ export function WordPopover() {
     const key = keyOf(lookup);
     let live = true;
     setState({ key });
+    setSaveError(false);
+    if (!useVocabStore.getState().items) void useVocabStore.getState().load();
     fetchResult(lookup)
       .then((result) => live && setState({ key, result }))
       .catch((e: Error) => live && setState({ key, error: e.message }));
@@ -150,6 +157,35 @@ export function WordPopover() {
   // JMdict's entry is ranked by context (reading, part of speech), so it heads the card when present.
   const head = first ?? zh[0];
   const readable = speech.chunkOf(lookup.sentenceId) >= 0;
+
+  const lemma = head?.headword ?? result?.lemma;
+  const saved = lemma ? vocab?.find((v) => vocabKey(v.lang, v.lemma) === vocabKey(lookup.lang, lemma)) : undefined;
+
+  const toggleSaved = async () => {
+    if (!result || !lemma) return;
+    if (saved) return removeVocab(saved.id);
+    // A compact meaning for the flashcard: Chinese when available, else the first English senses.
+    const meaning = zh.length
+      ? zh[0].senses.slice(0, 2).map((s) => s.glosses.join('，')).join('；')
+      : (first?.senses.slice(0, 2).map((s) => s.glosses.slice(0, 2).join(', ')).join('; ') ?? '');
+    const { chapter, book } = useReaderStore.getState();
+    try {
+      await saveVocab({
+        lang: lookup.lang,
+        word: lookup.word,
+        lemma,
+        reading: head?.reading ?? result.reading,
+        meaning,
+        sentence: lookup.sentence,
+        offset: lookup.offset,
+        ...(chapter && book
+          ? { source: chapter.source, bookId: chapter.bookId, bookTitle: book.title, chapter: chapter.index }
+          : {}),
+      });
+    } catch {
+      setSaveError(true);
+    }
+  };
 
   const act = (fn: () => void) => {
     // The sentence has been acted on; don't let the play button jump back to it later.
@@ -212,6 +248,19 @@ export function WordPopover() {
               className="mt-1 grid size-8 shrink-0 place-items-center rounded-full text-celadon hover:bg-celadon-wash disabled:opacity-40"
             >
               {speaking ? <LoaderCircle size={16} className="animate-spin" /> : <Volume2 size={17} />}
+            </button>
+            <button
+              type="button"
+              onClick={toggleSaved}
+              disabled={!result || !lemma}
+              aria-pressed={Boolean(saved)}
+              aria-label={saved ? '从生词本移除' : '加入生词本'}
+              title={saveError ? '没保存上，请重试' : saved ? '已在生词本，点按移除' : '加入生词本'}
+              className={`mt-1 grid size-8 shrink-0 place-items-center rounded-full hover:bg-celadon-wash disabled:opacity-40 ${
+                saveError ? 'text-danger' : 'text-celadon'
+              }`}
+            >
+              <Star size={17} fill={saved ? 'currentColor' : 'none'} />
             </button>
           </header>
 

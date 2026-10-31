@@ -1,8 +1,10 @@
-import { ChevronLeft, ChevronRight, Library, LoaderCircle } from 'lucide-react';
+import { BookMarked, ChevronLeft, ChevronRight, Library, LoaderCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { AmbientMixer, useAmbientSync } from './components/AmbientMixer/AmbientMixer.tsx';
 import { WordPopover } from './components/Dictionary/WordPopover.tsx';
 import { ShortcutsDialog, useHelpShortcut } from './components/ShortcutsDialog.tsx';
+import { VocabSheet } from './components/Vocab/VocabSheet.tsx';
+import { useVocabStore } from './store/useVocabStore.ts';
 import { Reader } from './components/Reader/Reader.tsx';
 import { TypographyPopover } from './components/Reader/TypographyPopover.tsx';
 import { SourcePicker } from './components/SourcePicker/SourcePicker.tsx';
@@ -67,6 +69,14 @@ function TopBar() {
             </button>
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => useVocabStore.getState().setOpen(true)}
+          aria-label="生词本"
+          className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
+        >
+          <BookMarked size={18} />
+        </button>
         <AmbientMixer />
         <TypographyPopover />
       </div>
@@ -117,6 +127,7 @@ export default function App() {
       <SourcePicker />
       <WordPopover />
       <ShortcutsDialog />
+      <VocabSheet />
     </div>
   );
 }

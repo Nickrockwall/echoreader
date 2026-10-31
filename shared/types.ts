@@ -142,6 +142,31 @@ export interface FuriganaRequest {
 /** Per input text, ruby spans [start, end, reading] over that text. */
 export type FuriganaResult = [number, number, string][][];
 
+// ---- Vocabulary book -------------------------------------------------------------
+
+export interface VocabInput {
+  lang: Lang;
+  /** As it appeared in the text (食べ). */
+  word: string;
+  /** Dictionary form (食べる); one entry per lang + lemma. */
+  lemma: string;
+  reading?: string;
+  /** Short meaning shown on the card back. */
+  meaning: string;
+  sentence: string;
+  /** Offset of `word` within `sentence`. */
+  offset: number;
+  source?: SourceId;
+  bookId?: string;
+  bookTitle?: string;
+  chapter?: number;
+}
+
+export interface VocabItem extends VocabInput {
+  id: number;
+  createdAt: string;
+}
+
 export interface ApiError {
   error: string;
 }

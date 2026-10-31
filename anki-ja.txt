@@ -1,0 +1,6 @@
+#separator:tab
+#html:true
+#notetype:Basic
+#deck:EchoReader::日语
+#tags column:3
+<div style="font-family:'Hiragino Mincho ProN','Yu Mincho',serif;font-size:2em">ʳ�٤�</div>	<div>��</div><hr><div style="font-family:'Hiragino Mincho ProN','Yu Mincho',serif">��<b><u>�ʳ�٤</u></b>롣</div>	echoreader ja

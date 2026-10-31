@@ -5,11 +5,14 @@ import type {
   DictLookupRequest,
   DictResult,
   FuriganaResult,
+  Lang,
   SearchResult,
   SourceId,
   TocPage,
   TtsRequest,
   TtsResult,
+  VocabInput,
+  VocabItem,
 } from '../../../shared/types.ts';
 
 async function get<T>(path: string, signal?: AbortSignal, init?: RequestInit): Promise<T> {
@@ -40,6 +43,12 @@ export const api = {
   tts: (req: TtsRequest) => post<TtsResult>('/tts', req),
   lookup: (req: DictLookupRequest, signal?: AbortSignal) => post<DictResult>('/dict/lookup', req, signal),
   furigana: (texts: string[]) => post<FuriganaResult>('/ja/furigana', { texts }),
+  vocab: {
+    list: () => get<VocabItem[]>('/vocab'),
+    save: (item: VocabInput) => post<VocabItem>('/vocab', item),
+    remove: (id: number) => get<{ ok: true }>(`/vocab/${id}`, undefined, { method: 'DELETE' }),
+    exportUrl: (lang?: Lang) => `/api/vocab/export${lang ? `?lang=${lang}` : ''}`,
+  },
 };
 
 function post<T>(path: string, body: unknown, signal?: AbortSignal) {
