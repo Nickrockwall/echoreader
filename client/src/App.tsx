@@ -2,6 +2,7 @@ import { BookMarked, ChevronLeft, ChevronRight, Library, LoaderCircle } from 'lu
 import { useEffect } from 'react';
 import { AmbientMixer, useAmbientSync } from './components/AmbientMixer/AmbientMixer.tsx';
 import { WordPopover } from './components/Dictionary/WordPopover.tsx';
+import { CreditsDialog } from './components/CreditsDialog.tsx';
 import { ShortcutsDialog, useHelpShortcut } from './components/ShortcutsDialog.tsx';
 import { VocabSheet } from './components/Vocab/VocabSheet.tsx';
 import { useVocabStore } from './store/useVocabStore.ts';
@@ -130,6 +131,7 @@ export default function App() {
       <WordPopover />
       <ShortcutsDialog />
       <VocabSheet />
+      <CreditsDialog />
     </div>
   );
 }

@@ -21,7 +21,7 @@ function SampleLine({ lang, lines }: { lang: 'ja' | 'en'; lines: string[] }) {
 }
 
 export function Welcome() {
-  const { openPicker, openChapter, lastPosition, status } = useReaderStore();
+  const { openPicker, openChapter, lastPosition, status, setCreditsOpen } = useReaderStore();
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-6 py-20 sm:px-10">
@@ -74,6 +74,17 @@ export function Welcome() {
           找英文经典
         </button>
       </div>
+
+      <p className="mt-16 text-xs text-ink-faint">
+        词典数据来自 JMdict（EDRDG）与维基词典，按 CC BY-SA 授权。
+        <button
+          type="button"
+          onClick={() => setCreditsOpen(true)}
+          className="ml-1 underline decoration-rule underline-offset-2 hover:text-ink"
+        >
+          致谢与许可
+        </button>
+      </p>
     </main>
   );
 }

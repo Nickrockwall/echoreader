@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import kuromoji from 'kuromoji';
 import type { DictResult, FuriganaResult } from '../../../shared/types.ts';
+import { JMDICT, zhWiktionary } from './credits.ts';
 import { lookupChinese } from './jazh.ts';
 import { lookupJmdict } from './jmdict.ts';
 
@@ -136,9 +137,9 @@ export async function lookupJapanese(word: string, sentence = word, offset = 0):
         reading: reading !== word ? reading : undefined,
         analysis: main && !compound ? describe(main) : undefined,
         entries,
-        source: 'JMdict',
+        credit: JMDICT,
         zhEntries,
-        zhSource: '维基词典',
+        zhCredit: zhEntries.length ? zhWiktionary(zhEntries[0].headword) : undefined,
       };
     }
   }
@@ -149,7 +150,7 @@ export async function lookupJapanese(word: string, sentence = word, offset = 0):
     reading: reading !== word ? reading : undefined,
     analysis: main ? describe(main) : undefined,
     entries: [],
-    source: 'JMdict',
+    credit: JMDICT,
   };
 }
 

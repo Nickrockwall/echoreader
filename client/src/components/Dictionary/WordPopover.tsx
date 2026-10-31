@@ -1,7 +1,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import { LoaderCircle, Play, Repeat1, Star, Volume2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { DictEntry, DictResult } from '../../../../shared/types.ts';
+import type { Credit, DictEntry, DictResult } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
 import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
 import { useReaderStore, type LookupTarget } from '../../store/useReaderStore.ts';
@@ -43,6 +43,27 @@ async function pronounce(result: DictResult, entry: DictEntry | undefined) {
     wordAudio.src = (await api.tts({ text, lang: result.lang, voice })).audio;
   }
   await wordAudio.play();
+}
+
+const linkClass = 'underline decoration-rule underline-offset-2 hover:text-celadon hover:decoration-celadon';
+
+function CreditLine({ label, credit }: { label: string; credit: Credit }) {
+  return (
+    <p>
+      {label}：
+      {credit.url ? (
+        <a href={credit.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          {credit.name}
+        </a>
+      ) : (
+        credit.name
+      )}
+      ，
+      <a href={credit.licenseUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+        {credit.license}
+      </a>
+    </p>
+  );
 }
 
 function Entry({
@@ -284,7 +305,7 @@ export function WordPopover() {
                 // With Chinese definitions present, English is a supplement the reader can open.
                 <details className="group border-t border-rule pt-2.5">
                   <summary className="cursor-pointer select-none text-xs text-ink-faint marker:text-rule hover:text-ink-soft">
-                    英文释义（{result!.source}）
+                    英文释义：{result!.credit.name}
                   </summary>
                   <div className="mt-2.5 space-y-3">
                     <Entry entry={first} lang={lookup.lang} primary />
@@ -302,9 +323,12 @@ export function WordPopover() {
                 </>
               ))}
             {result && (first || zh.length > 0) && (
-              <p className="text-[11px] text-ink-faint">
-                释义来自 {[zh.length ? `${result.zhSource}（CC BY-SA）` : null, first ? result.source : null].filter(Boolean).join('、')}
-              </p>
+              // Attribution required by the CC BY-SA sources: who, where from, which licence.
+              <div className="space-y-0.5 text-[11px] text-ink-faint">
+                {zh.length > 0 && result.zhCredit && <CreditLine label="中文释义" credit={result.zhCredit} />}
+                {first && <CreditLine label={zh.length ? '英文释义' : '释义'} credit={result.credit} />}
+                {head?.audio && head.audioCredit && <CreditLine label="发音录音" credit={head.audioCredit} />}
+              </div>
             )}
           </div>
 

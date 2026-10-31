@@ -116,7 +116,18 @@ export interface DictEntry {
   common?: boolean;
   /** Pronunciation audio, when the dictionary offers one (English). */
   audio?: string;
+  /** Who made that recording and under what terms (it is separately licensed). */
+  audioCredit?: Credit;
   senses: DictSense[];
+}
+
+/** Attribution for a piece of licensed content, as shown next to it. */
+export interface Credit {
+  name: string;
+  /** The source page (e.g. the Wiktionary entry this definition came from). */
+  url?: string;
+  license: string;
+  licenseUrl: string;
 }
 
 export interface DictResult {
@@ -129,10 +140,11 @@ export interface DictResult {
   /** Grammatical role in context, e.g. "動詞・自立" (Japanese). */
   analysis?: string;
   entries: DictEntry[];
-  source: string;
+  /** Attribution for `entries`. */
+  credit: Credit;
   /** Chinese-defined entries (Japanese only), shown ahead of `entries`. */
   zhEntries?: DictEntry[];
-  zhSource?: string;
+  zhCredit?: Credit;
 }
 
 export interface FuriganaRequest {

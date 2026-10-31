@@ -158,6 +158,12 @@ export function TypographyPopover() {
               <kbd className="rounded border border-rule border-b-2 bg-paper px-1.5 text-xs">?</kbd>
             </Popover.Close>
           </div>
+          <Popover.Close
+            onClick={() => useReaderStore.getState().setCreditsOpen(true)}
+            className="block text-xs text-ink-faint hover:text-ink"
+          >
+            致谢与许可
+          </Popover.Close>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

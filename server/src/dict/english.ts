@@ -1,18 +1,26 @@
 import type { DictEntry, DictResult } from '../../../shared/types.ts';
 import { cached, DAY } from '../lib/cache.ts';
+import { enWiktionary } from './credits.ts';
 import { fetchJson, UpstreamError } from '../lib/http.ts';
 
 const API = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
 const MAX_CANDIDATES = 4;
 
+interface License {
+  name: string;
+  url: string;
+}
+
 interface FreeDictEntry {
   word: string;
   phonetic?: string;
-  phonetics: { text?: string; audio?: string }[];
+  phonetics: { text?: string; audio?: string; sourceUrl?: string; license?: License }[];
   meanings: {
     partOfSpeech: string;
     definitions: { definition: string; example?: string }[];
   }[];
+  license?: License;
+  sourceUrls?: string[];
 }
 
 const IRREGULAR: Record<string, string> = {
@@ -56,20 +64,34 @@ export function lemmaCandidates(raw: string): string[] {
 }
 
 function toEntries(data: FreeDictEntry[]): DictEntry[] {
-  return data.slice(0, 3).map((e) => ({
-    headword: e.word,
-    reading: e.phonetic ?? e.phonetics.find((p) => p.text)?.text,
-    audio: e.phonetics.find((p) => p.audio)?.audio || undefined,
-    // One sense per definition, so each gets its own number and example.
-    senses: e.meanings.slice(0, 3).flatMap((m) =>
-      m.definitions.slice(0, 3).map((d) => ({
-        pos: [m.partOfSpeech],
-        glosses: [d.definition],
-        notes: [],
-        example: d.example,
-      })),
-    ),
-  }));
+  return data.slice(0, 3).map((e) => {
+    const recording = e.phonetics.find((p) => p.audio);
+    return {
+      headword: e.word,
+      reading: e.phonetic ?? e.phonetics.find((p) => p.text)?.text,
+      audio: recording?.audio || undefined,
+      // Recordings are separately licensed (mostly Wikimedia Commons uploads).
+      audioCredit:
+        recording?.audio && recording.license
+          ? {
+              name: 'Wikimedia Commons',
+              url: recording.sourceUrl,
+              // The API sometimes drops the "CC" prefix ("BY-SA 4.0").
+              license: recording.license.name.replace(/^(?!CC)/, 'CC '),
+              licenseUrl: recording.license.url,
+            }
+          : undefined,
+      // One sense per definition, so each gets its own number and example.
+      senses: e.meanings.slice(0, 3).flatMap((m) =>
+        m.definitions.slice(0, 3).map((d) => ({
+          pos: [m.partOfSpeech],
+          glosses: [d.definition],
+          notes: [],
+          example: d.example,
+        })),
+      ),
+    };
+  });
 }
 
 /** null when the dictionary has no such headword. */
@@ -96,9 +118,10 @@ export async function lookupEnglish(word: string): Promise<DictResult> {
       continue;
     }
     if (data?.length) {
-      return { lang: 'en', word, lemma: candidate, entries: toEntries(data), source: 'Free Dictionary' };
+      const credit = enWiktionary(data[0].sourceUrls?.[0], data[0].license);
+      return { lang: 'en', word, lemma: candidate, entries: toEntries(data), credit };
     }
   }
   if (failure) throw failure;
-  return { lang: 'en', word, lemma: word.toLowerCase(), entries: [], source: 'Free Dictionary' };
+  return { lang: 'en', word, lemma: word.toLowerCase(), entries: [], credit: enWiktionary() };
 }

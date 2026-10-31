@@ -4,9 +4,9 @@
 
 *A bilingual (Japanese / English) read-along novel reader for language learners: neural TTS with word-by-word highlighting, tap-to-look-up dictionary (Chinese and English glosses), vocabulary book with Anki export, vertical Japanese text, ambient sounds, and an installable offline-capable PWA. Runs on your own computer.*
 
-![朗读时句子与单词同步高亮](docs/screenshots/read-along.png)
+![朗读时句子与单词同步高亮（夏目漱石《吾輩は猫である》，公有领域）](docs/screenshots/read-along.png)
 
-| 竖排（縦書き） | 点词查词典 | 手机 |
+| 竖排（縦書き） | 点词查词典（中文释义 + 署名） | 手机 |
 |---|---|---|
 | ![竖排阅读](docs/screenshots/vertical.png) | ![中文释义词典卡片](docs/screenshots/dictionary.png) | ![手机界面](docs/screenshots/phone.png) |
 
@@ -64,7 +64,7 @@ Windows 上可以双击 `scripts/windows/start-hidden.vbs` 在后台运行阅读
 
 ## 数据与许可
 
-- 代码：[MIT](LICENSE)（只针对代码；下面这些随附数据保留各自的许可）
+- 代码：[MIT](LICENSE)（只针对代码；下面这些随附数据保留各自的许可，完整清单见 [CREDITS.md](CREDITS.md)）
 - 日语词典：JMdict（EDRDG）与中文维基词典，CC BY-SA 4.0，详见 [`server/dict-data/README.md`](server/dict-data/README.md)。想更新到最新数据可运行 `npm run setup:dict -w server`
 - 咖啡馆环境音：公有领域录音，详见 [`client/public/ambient/ATTRIBUTION.md`](client/public/ambient/ATTRIBUTION.md)；雨声、壁炉声由浏览器实时合成
 

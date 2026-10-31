@@ -69,6 +69,7 @@ interface ReaderState {
   pickedTokenId: string | null;
   lookup: LookupTarget | null;
   shortcutsOpen: boolean;
+  creditsOpen: boolean;
   /** Set when a chapter finished playing and the next one should start by itself. */
   autoplayPending: boolean;
 
@@ -79,6 +80,7 @@ interface ReaderState {
   setVoiceVolume(volume: number): void;
   setDucking(on: boolean): void;
   setShortcutsOpen(open: boolean): void;
+  setCreditsOpen(open: boolean): void;
   openLookup(target: LookupTarget): void;
   closeLookup(): void;
   setRate(rate: Rate): void;
@@ -124,6 +126,7 @@ export const useReaderStore = create<ReaderState>()(
       pickedTokenId: null,
       lookup: null,
       shortcutsOpen: false,
+      creditsOpen: false,
       autoplayPending: false,
 
       setAutoFurigana: (autoFurigana) => set({ autoFurigana }),
@@ -133,6 +136,7 @@ export const useReaderStore = create<ReaderState>()(
       setVoiceVolume: (voiceVolume) => set({ voiceVolume }),
       setDucking: (ducking) => set({ ducking }),
       setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+      setCreditsOpen: (creditsOpen) => set({ creditsOpen }),
       openLookup: (lookup) => set({ lookup, pickedTokenId: lookup.tokenId }),
       closeLookup: () => set({ lookup: null }),
       setRate: (rate) => set({ rate }),
