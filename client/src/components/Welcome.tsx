@@ -28,7 +28,9 @@ export function Welcome() {
       <h1 className="font-mincho text-[clamp(2.5rem,7vw,4.25rem)] font-semibold leading-[1.15] tracking-[0.02em] text-ink">
         读一句，
         <br />
-        听一句，查一个词。
+        听一句，
+        <br className="sm:hidden" />
+        查一个词。
       </h1>
       <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-ink-soft">
         EchoReader 从小説家になろう 和 Project Gutenberg 载入日语、英语小说，每个词都能点开查释义。试着点下面的词：

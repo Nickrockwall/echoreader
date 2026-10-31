@@ -149,11 +149,11 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   if (!count) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 font-ui">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center px-3 font-ui sm:px-4">
       <div
         role="region"
         aria-label="朗读控制条"
-        className="pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-rule bg-surface/95 px-3 py-2.5 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.45)] backdrop-blur"
+        className="pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-x-2 gap-y-1.5 rounded-2xl sm:gap-x-3 sm:gap-y-2 border border-rule bg-surface/95 px-3 py-2.5 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.45)] backdrop-blur"
       >
         <button
           type="button"
@@ -225,7 +225,16 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
           </span>
         </div>
 
-        <div role="radiogroup" aria-label="语速" className="flex shrink-0 rounded-lg bg-paper p-0.5 text-xs">
+        {/* Phones: one button that cycles the speeds, so the controls fit a single row. */}
+        <button
+          type="button"
+          onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}
+          aria-label={`语速 ${rate}×，点按切换`}
+          className="ml-auto h-9 min-w-14 shrink-0 rounded-lg bg-paper px-2.5 text-sm tabular-nums text-ink sm:hidden"
+        >
+          {rate === 1 ? '1.0' : rate}×
+        </button>
+        <div role="radiogroup" aria-label="语速" className="hidden shrink-0 rounded-lg bg-paper p-0.5 text-xs sm:flex">
           {RATES.map((r) => (
             <button
               key={r}
@@ -242,7 +251,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
 
         <Popover.Root>
           <Popover.Trigger
-            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+            className="flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
             aria-label={`声线：${voiceLabel}`}
           >
             <UserRound size={15} />

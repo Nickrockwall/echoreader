@@ -14,12 +14,13 @@ function TopBar() {
   const go = (index: number | null) => chapter && index && openChapter(chapter.source, chapter.bookId, index);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-rule/70 bg-paper/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
+    <header className="sticky top-0 z-30 border-b border-rule/70 bg-paper/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-1 px-2 sm:gap-3 sm:px-4">
         <button
           type="button"
           onClick={() => openPicker()}
-          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink-soft hover:bg-celadon-wash hover:text-ink"
+          aria-label="书架"
+          className="flex h-10 items-center gap-2 rounded-md px-2.5 text-sm text-ink-soft hover:bg-celadon-wash hover:text-ink"
         >
           <Library size={18} />
           <span className="hidden sm:inline">书架</span>
@@ -40,8 +41,9 @@ function TopBar() {
 
         {status === 'loading' && <LoaderCircle size={16} className="animate-spin text-celadon" aria-label="正在载入" />}
 
+        {/* Phones turn chapters with the buttons at the end of each chapter. */}
         {chapter && (
-          <div className="flex items-center">
+          <div className="hidden items-center sm:flex">
             <button
               type="button"
               aria-label="上一章"
@@ -95,6 +97,9 @@ export default function App() {
   useHelpShortcut();
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    // The phone's status bar takes the page color too.
+    const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim();
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', paper);
   }, [theme]);
 
   return (

@@ -128,7 +128,8 @@ export function TypographyPopover() {
             </button>
             <Popover.Close
               onClick={() => useReaderStore.getState().setShortcutsOpen(true)}
-              className="flex items-center gap-1.5 text-ink-soft hover:text-ink"
+              // Touch screens have no keyboard to speak of.
+              className="flex items-center gap-1.5 text-ink-soft hover:text-ink [@media(pointer:coarse)]:hidden"
             >
               键盘快捷键
               <kbd className="rounded border border-rule border-b-2 bg-paper px-1.5 text-xs">?</kbd>

@@ -132,7 +132,7 @@ export function SourcePicker() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={meta.placeholder}
               lang={meta.lang}
-              className="w-full rounded-md border border-rule bg-surface py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-celadon focus:outline-none"
+              className="w-full rounded-md border border-rule bg-surface py-2.5 pl-9 pr-3 text-base text-ink sm:text-sm placeholder:text-ink-faint focus:border-celadon focus:outline-none"
             />
           </form>
 

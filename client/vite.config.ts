@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    // Reachable from a phone on the same network during development too.
+    host: true,
     proxy: {
       '/api': 'http://localhost:3001',
     },

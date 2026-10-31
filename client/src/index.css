@@ -87,6 +87,13 @@ body,
   height: 100%;
 }
 
+html {
+  /* Keep text at the size we set when a phone rotates; no grey flash on tap. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   margin: 0;
   background: var(--paper);

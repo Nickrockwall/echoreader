@@ -1,4 +1,8 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
+import { existsSync } from 'node:fs';
+import { networkInterfaces } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { FuriganaRequest, Lang, SourceId, TtsRequest } from '../../shared/types.ts';
 import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
 import { UpstreamError } from './lib/http.ts';
@@ -79,14 +83,38 @@ app.get('/api/tts/audio/:file', (req, res, next) => {
   });
 });
 
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: '没有这个接口' });
+});
+
+// Production: serve the built reader from the same port, so a phone needs just one address.
+const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');
+if (existsSync(path.join(CLIENT_DIST, 'index.html'))) {
+  // Hashed assets never change; the shell and service worker must always be revalidated.
+  app.use('/assets', express.static(path.join(CLIENT_DIST, 'assets'), { immutable: true, maxAge: '365d' }));
+  app.use(express.static(CLIENT_DIST, { maxAge: 0 }));
+  app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(CLIENT_DIST, 'index.html')));
+}
+
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   const status = err instanceof UpstreamError ? err.status : 500;
   if (status >= 500) console.error(`[${req.method} ${req.url}]`, err);
   res.status(status).json({ error: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`EchoReader API listening on http://localhost:${PORT}`);
+/** IPv4 addresses other devices on the same network can use to reach this machine. */
+function lanAddresses() {
+  return Object.values(networkInterfaces())
+    .flat()
+    .filter((i): i is NonNullable<typeof i> => Boolean(i && i.family === 'IPv4' && !i.internal))
+    .map((i) => i.address);
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`EchoReader listening on http://localhost:${PORT}`);
+  if (existsSync(CLIENT_DIST)) {
+    for (const ip of lanAddresses()) console.log(`  手机（同一 Wi-Fi）打开：http://${ip}:${PORT}`);
+  }
   // Warm the landing lists; Gutendex in particular can take tens of seconds on a cold request.
   for (const source of Object.values(sources)) source.popular(1).catch(() => {});
   warmJapanese();
