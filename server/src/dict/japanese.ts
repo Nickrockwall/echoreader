@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import kuromoji from 'kuromoji';
 import type { DictResult, FuriganaResult } from '../../../shared/types.ts';
+import { lookupChinese } from './jazh.ts';
 import { lookupJmdict } from './jmdict.ts';
 
 type Tokenizer = kuromoji.Tokenizer<kuromoji.IpadicFeatures>;
@@ -118,7 +119,15 @@ export async function lookupJapanese(word: string, sentence = word, offset = 0):
     // The in-context reading only describes surfaces, not a lemma like 食べる.
     const contextual = key === word ? reading : key === main?.surface ? main.reading : undefined;
     const entries = lookupJmdict(key, { reading: contextual, pos });
-    if (entries.length) {
+    // JMdict's best entry bridges to the Chinese dictionary: its spellings find entries filed
+    // under another form (はし -> 箸), and its reading tells homographs apart.
+    const best = entries[0];
+    const spellings = best ? [best.headword, ...(best.variants ?? [])].filter((f) => f === key || HAN.test(f)) : [];
+    const zhEntries = lookupChinese([...new Set([key, ...spellings])], {
+      reading: best ? (best.reading ?? best.headword) : contextual,
+      pos: main?.pos,
+    });
+    if (entries.length || zhEntries.length) {
       const compound = covered.length > 1 && key === word;
       return {
         lang: 'ja',
@@ -128,6 +137,8 @@ export async function lookupJapanese(word: string, sentence = word, offset = 0):
         analysis: main && !compound ? describe(main) : undefined,
         entries,
         source: 'JMdict',
+        zhEntries,
+        zhSource: '维基词典',
       };
     }
   }

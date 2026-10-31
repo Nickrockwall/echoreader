@@ -103,6 +103,8 @@ export interface DictSense {
   /** Usage notes: "usually kana", "slang", ... */
   notes: string[];
   example?: string;
+  /** Translation of `example` into the reader's language, when the source has one. */
+  exampleTranslation?: string;
 }
 
 export interface DictEntry {
@@ -128,6 +130,9 @@ export interface DictResult {
   analysis?: string;
   entries: DictEntry[];
   source: string;
+  /** Chinese-defined entries (Japanese only), shown ahead of `entries`. */
+  zhEntries?: DictEntry[];
+  zhSource?: string;
 }
 
 export interface FuriganaRequest {

@@ -6,7 +6,9 @@
 
 ```bash
 npm install
-npm run setup:dict -w server   # 首次：下载 JMdict 并生成 server/data/jmdict.sqlite（日语查词用，约 60 MB）
+npm run setup:dict -w server   # 首次：生成日语词典（约 1 分钟，需联网）
+                               #   server/data/jmdict.sqlite  JMdict 日英（约 60 MB）
+                               #   server/data/ja-zh.sqlite   维基词典日中（约 18 MB，CC BY-SA）
 npm run dev                    # 同时启动后端 :3001 和前端 :5173
 ```
 

@@ -44,7 +44,19 @@ async function pronounce(result: DictResult, entry: DictEntry | undefined) {
   await wordAudio.play();
 }
 
-function Entry({ entry, lang, primary }: { entry: DictEntry; lang: 'ja' | 'en'; primary: boolean }) {
+function Entry({
+  entry,
+  lang,
+  primary,
+  glossLang = 'en',
+}: {
+  entry: DictEntry;
+  /** Language of the headword and examples. */
+  lang: 'ja' | 'en';
+  primary: boolean;
+  /** Language the definitions are written in. */
+  glossLang?: 'en' | 'zh-CN';
+}) {
   const senses = primary ? entry.senses.slice(0, 5) : entry.senses.slice(0, 2);
   // Label a sense only when its part of speech differs from the one before it.
   const labelOf = (i: number) => {
@@ -75,14 +87,26 @@ function Entry({ entry, lang, primary }: { entry: DictEntry; lang: 'ja' | 'en'; 
                 ))}
               </p>
             )}
-            <p lang="en" className="text-ink">
+            <p lang={glossLang} className="text-ink">
               {senses.length > 1 && <span className="mr-1.5 tabular-nums text-ink-faint">{i + 1}.</span>}
-              {s.glosses.join('; ')}
+              {s.glosses.join(glossLang === 'en' ? '; ' : '；')}
             </p>
-            {s.example && (
-              <p lang="en" className="mt-0.5 font-literata text-[13px] italic text-ink-soft">
-                {s.example}
+            {s.example && s.exampleTranslation ? (
+              // A bilingual example: the source sentence, then its translation.
+              <p className="mt-1 border-l-2 border-rule pl-2.5 text-[13px] leading-relaxed">
+                <span lang={lang} className={`block text-ink-soft ${lang === 'ja' ? 'font-mincho' : 'font-literata'}`}>
+                  {s.example}
+                </span>
+                <span lang={glossLang} className="block text-ink-faint">
+                  {s.exampleTranslation}
+                </span>
               </p>
+            ) : (
+              s.example && (
+                <p lang="en" className="mt-0.5 font-literata text-[13px] italic text-ink-soft">
+                  {s.example}
+                </p>
+              )
             )}
           </li>
         ))}
@@ -122,6 +146,9 @@ export function WordPopover() {
   const current = state && state.key === keyOf(lookup) ? state : null;
   const result = current?.result;
   const [first, ...rest] = result?.entries ?? [];
+  const zh = result?.zhEntries ?? [];
+  // JMdict's entry is ranked by context (reading, part of speech), so it heads the card when present.
+  const head = first ?? zh[0];
   const readable = speech.chunkOf(lookup.sentenceId) >= 0;
 
   const act = (fn: () => void) => {
@@ -135,7 +162,7 @@ export function WordPopover() {
     if (!result) return;
     setSpeaking(true);
     try {
-      await pronounce(result, first);
+      await pronounce(result, head);
     } catch {
       // Pronunciation is a nicety; a failure here needs no message.
     } finally {
@@ -165,10 +192,10 @@ export function WordPopover() {
                     lookup.lang === 'ja' ? 'font-mincho' : 'font-literata'
                   }`}
                 >
-                  {first?.headword ?? result?.lemma ?? lookup.word}
+                  {head?.headword ?? result?.lemma ?? lookup.word}
                 </span>
-                {(first?.reading ?? result?.reading) && (
-                  <span className="text-[15px] text-ink-soft">{first?.reading ?? result?.reading}</span>
+                {(head?.reading ?? result?.reading) && (
+                  <span className="text-[15px] text-ink-soft">{head?.reading ?? result?.reading}</span>
                 )}
               </p>
               {result && (result.analysis || result.lemma !== lookup.word.toLowerCase()) && (
@@ -195,17 +222,40 @@ export function WordPopover() {
               </p>
             )}
             {current?.error && <p className="py-1 text-sm text-red-700">{current.error}</p>}
-            {result && !first && (
+            {result && !first && !zh.length && (
               <p className="py-1 text-sm text-ink-soft">
                 词典里没有「{result.lemma}」。{lookup.lang === 'ja' ? '可能是人名、专有名词或少见写法。' : ''}
               </p>
             )}
-            {first && <Entry entry={first} lang={lookup.lang} primary />}
-            {rest.map((e, i) => (
-              <Entry key={i} entry={e} lang={lookup.lang} primary={false} />
+            {zh.map((e, i) => (
+              <Entry key={`zh${i}`} entry={e} lang={lookup.lang} primary={i === 0} glossLang="zh-CN" />
             ))}
-            {result && result.entries.length > 0 && (
-              <p className="text-[11px] text-ink-faint">释义来自 {result.source}</p>
+            {first &&
+              (zh.length ? (
+                // With Chinese definitions present, English is a supplement the reader can open.
+                <details className="group border-t border-rule pt-2.5">
+                  <summary className="cursor-pointer select-none text-xs text-ink-faint marker:text-rule hover:text-ink-soft">
+                    英文释义（{result!.source}）
+                  </summary>
+                  <div className="mt-2.5 space-y-3">
+                    <Entry entry={first} lang={lookup.lang} primary />
+                    {rest.map((e, i) => (
+                      <Entry key={i} entry={e} lang={lookup.lang} primary={false} />
+                    ))}
+                  </div>
+                </details>
+              ) : (
+                <>
+                  <Entry entry={first} lang={lookup.lang} primary />
+                  {rest.map((e, i) => (
+                    <Entry key={i} entry={e} lang={lookup.lang} primary={false} />
+                  ))}
+                </>
+              ))}
+            {result && (first || zh.length > 0) && (
+              <p className="text-[11px] text-ink-faint">
+                释义来自 {[zh.length ? `${result.zhSource}（CC BY-SA）` : null, first ? result.source : null].filter(Boolean).join('、')}
+              </p>
             )}
           </div>
 

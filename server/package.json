@@ -6,13 +6,15 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "setup:dict": "tsx scripts/build-jmdict.ts"
+    "setup:dict": "tsx scripts/build-jmdict.ts && tsx scripts/build-zhdict.ts",
+    "setup:dict:zh": "tsx scripts/build-zhdict.ts"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
     "express": "^5.3.0",
     "kuromoji": "^0.1.2",
-    "node-edge-tts": "^1.2.12"
+    "node-edge-tts": "^1.2.12",
+    "opencc-js": "^1.4.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
