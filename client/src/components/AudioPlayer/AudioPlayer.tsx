@@ -5,11 +5,27 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChapterContent } from '../../../../shared/types.ts';
 import { useAudioSync, useSpeechState } from '../../hooks/useAudioSync.ts';
 import { buildChunks, type SpeechChunk } from '../../lib/speech.ts';
+import { existingGraph } from '../../lib/audioGraph.ts';
 import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
 import type { Paragraph } from '../../lib/text.ts';
 import { RATES, useReaderStore, VOICES } from '../../store/useReaderStore.ts';
 
 const TOP_BAR_HEIGHT = 56;
+const SEEK_MS = 5000;
+
+/**
+ * Whether a key press is free for the reader's shortcuts: not typed into a field, not meant for
+ * a focused control (Space on a button, arrows on a slider), and not inside an open dialog.
+ */
+export function shortcutTarget(e: KeyboardEvent) {
+  const el = e.target as HTMLElement | null;
+  if (!el || el === document.body) return true;
+  if (el.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="slider"], [role="dialog"]')) {
+    return false;
+  }
+  if (e.key === ' ' && el.closest('button, a, summary')) return false;
+  return true;
+}
 
 /** The chunk and sentence containing a picked body word, if any. */
 function pickedStart(pickedTokenId: string | null) {
@@ -50,6 +66,8 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   useAudioSync();
 
   const onPlay = () => {
+    // Clicking play is the gesture that lets a suspended audio graph run.
+    void existingGraph()?.ctx.resume();
     const pick = pickedStart(pickedTokenId);
     if (pick && pickedTokenId !== usedPick.current && state.status !== 'playing') {
       usedPick.current = pickedTokenId;
@@ -58,6 +76,39 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
       speech.toggle(pick ?? firstVisible(chunks));
     }
   };
+
+  // Keyboard: Space play/pause, ←/→ ±5 s, r replay sentence, Shift+R slow repeat.
+  const onPlayRef = useRef(onPlay);
+  onPlayRef.current = onPlay;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || !shortcutTarget(e)) return;
+      const handled = (() => {
+        switch (e.key) {
+          case ' ':
+            onPlayRef.current();
+            return true;
+          case 'ArrowLeft':
+            speech.seekBy(-SEEK_MS);
+            return true;
+          case 'ArrowRight':
+            speech.seekBy(SEEK_MS);
+            return true;
+          case 'r':
+            speech.replaySentence();
+            return true;
+          case 'R':
+            speech.repeatSentence();
+            return true;
+          default:
+            return false;
+        }
+      })();
+      if (handled) e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // A fresh queue per chapter (the Reader is keyed by chapter, so this runs once per chapter).
   useEffect(() => {
@@ -102,13 +153,13 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
       <div
         role="region"
         aria-label="朗读控制条"
-        className="pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-rule bg-page/95 px-3 py-2.5 shadow-[0_18px_40px_-20px_rgb(30_35_48/0.45)] backdrop-blur"
+        className="pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-rule bg-surface/95 px-3 py-2.5 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.45)] backdrop-blur"
       >
         <button
           type="button"
           onClick={onPlay}
           aria-label={playing ? '暂停' : '朗读'}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-celadon text-page hover:bg-celadon-deep"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-celadon text-on-accent hover:bg-celadon-deep"
         >
           {busy ? (
             <LoaderCircle size={20} className="animate-spin" />
@@ -163,12 +214,11 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
               setScrub(null);
               void speech.playAt(v);
             }}
-            aria-label="朗读位置（段落）"
           >
             <Slider.Track className="relative h-1 grow rounded-full bg-rule">
               <Slider.Range className="absolute h-full rounded-full bg-celadon" />
             </Slider.Track>
-            <Slider.Thumb className="block size-3.5 rounded-full border-2 border-celadon bg-page" />
+            <Slider.Thumb aria-label="朗读位置（段落）" className="block size-3.5 rounded-full border-2 border-celadon bg-surface" />
           </Slider.Root>
           <span className="shrink-0 text-xs tabular-nums text-ink-faint">
             {shown + 1} / {count} 段
@@ -183,7 +233,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
               role="radio"
               aria-checked={rate === r}
               onClick={() => setRate(r)}
-              className="rounded-md px-2 py-1 tabular-nums text-ink-soft aria-checked:bg-page aria-checked:text-ink aria-checked:shadow-sm"
+              className="rounded-md px-2 py-1 tabular-nums text-ink-soft aria-checked:bg-surface aria-checked:text-ink aria-checked:shadow-sm"
             >
               {r === 1 ? '1.0' : r}×
             </button>
@@ -202,8 +252,10 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
             <Popover.Content
               side="top"
               align="end"
+              // Return focus to the page, not this trigger, so Space keeps meaning play/pause.
+              onCloseAutoFocus={(e) => e.preventDefault()}
               sideOffset={10}
-              className="z-50 w-56 rounded-lg border border-rule bg-page p-1.5 font-ui shadow-[0_12px_32px_-12px_rgb(30_35_48/0.3)]"
+              className="z-50 w-56 rounded-lg border border-rule bg-surface p-1.5 font-ui shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)]"
             >
               <div role="radiogroup" aria-label="声线">
                 {VOICES[lang].map((v) => (
@@ -234,7 +286,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
         </Popover.Root>
 
         {status === 'error' && error && (
-          <p role="alert" className="basis-full px-1 text-xs !indent-0 text-red-700">
+          <p role="alert" className="basis-full px-1 text-xs !indent-0 text-danger">
             朗读出错：{error}。点播放键重试。
           </p>
         )}

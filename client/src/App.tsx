@@ -1,5 +1,8 @@
 import { ChevronLeft, ChevronRight, Library, LoaderCircle } from 'lucide-react';
+import { useEffect } from 'react';
+import { AmbientMixer, useAmbientSync } from './components/AmbientMixer/AmbientMixer.tsx';
 import { WordPopover } from './components/Dictionary/WordPopover.tsx';
+import { ShortcutsDialog, useHelpShortcut } from './components/ShortcutsDialog.tsx';
 import { Reader } from './components/Reader/Reader.tsx';
 import { TypographyPopover } from './components/Reader/TypographyPopover.tsx';
 import { SourcePicker } from './components/SourcePicker/SourcePicker.tsx';
@@ -62,6 +65,7 @@ function TopBar() {
             </button>
           </div>
         )}
+        <AmbientMixer />
         <TypographyPopover />
       </div>
     </header>
@@ -86,7 +90,13 @@ function Spine() {
 }
 
 export default function App() {
-  const { chapter, status, error } = useReaderStore();
+  const { chapter, status, error, theme } = useReaderStore();
+  useAmbientSync();
+  useHelpShortcut();
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   return (
     <div className="flex min-h-full flex-col">
       <TopBar />
@@ -95,12 +105,13 @@ export default function App() {
         {chapter ? <Reader key={`${chapter.source}:${chapter.bookId}:${chapter.index}`} chapter={chapter} /> : <Welcome />}
       </div>
       {status === 'error' && error && chapter && (
-        <p role="alert" className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 rounded-md bg-ink px-4 py-3 text-sm text-page">
+        <p role="alert" className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 rounded-md bg-ink px-4 py-3 text-sm text-on-accent">
           打不开这一章：{error}
         </p>
       )}
       <SourcePicker />
       <WordPopover />
+      <ShortcutsDialog />
     </div>
   );
 }

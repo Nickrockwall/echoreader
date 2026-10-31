@@ -49,7 +49,7 @@ export function Welcome() {
             type="button"
             disabled={status === 'loading'}
             onClick={() => openChapter(lastPosition.source, lastPosition.bookId, lastPosition.chapter)}
-            className="flex items-center gap-2 rounded-md bg-celadon px-5 py-3 text-sm font-medium text-page hover:bg-celadon-deep disabled:opacity-60"
+            className="flex items-center gap-2 rounded-md bg-celadon px-5 py-3 text-sm font-medium text-on-accent hover:bg-celadon-deep disabled:opacity-60"
           >
             <BookOpen size={16} />
             继续读《{lastPosition.title}》第 {lastPosition.chapter} 章
@@ -59,7 +59,7 @@ export function Welcome() {
           type="button"
           onClick={() => openPicker('syosetu')}
           className={`rounded-md px-5 py-3 text-sm font-medium ${
-            lastPosition ? 'border border-rule text-ink hover:border-celadon' : 'bg-celadon text-page hover:bg-celadon-deep'
+            lastPosition ? 'border border-rule text-ink hover:border-celadon' : 'bg-celadon text-on-accent hover:bg-celadon-deep'
           }`}
         >
           找日语小说

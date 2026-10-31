@@ -182,7 +182,7 @@ export function WordPopover() {
           collisionPadding={{ top: 64, bottom: window.innerWidth < 640 ? 156 : 104, left: 16, right: 16 }}
           onOpenAutoFocus={(e) => e.preventDefault()}
           aria-label={`「${lookup.word}」的释义`}
-          className="z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-2rem))] flex-col rounded-xl border border-rule bg-page font-ui shadow-[0_18px_44px_-18px_rgb(30_35_48/0.4)] data-[state=open]:animate-[fade_120ms_ease-out]"
+          className="z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-2rem))] flex-col rounded-xl border border-rule bg-surface font-ui shadow-[0_18px_44px_-18px_rgb(0_0_0/0.4)] data-[state=open]:animate-[fade_120ms_ease-out]"
         >
           <header className="flex items-start gap-3 px-4 pb-2 pt-3.5">
             <div className="min-w-0 flex-1" lang={lookup.lang}>
@@ -221,7 +221,7 @@ export function WordPopover() {
                 <LoaderCircle size={14} className="animate-spin" /> 正在查词…
               </p>
             )}
-            {current?.error && <p className="py-1 text-sm text-red-700">{current.error}</p>}
+            {current?.error && <p className="py-1 text-sm text-danger">{current.error}</p>}
             {result && !first && !zh.length && (
               <p className="py-1 text-sm text-ink-soft">
                 词典里没有「{result.lemma}」。{lookup.lang === 'ja' ? '可能是人名、专有名词或少见写法。' : ''}

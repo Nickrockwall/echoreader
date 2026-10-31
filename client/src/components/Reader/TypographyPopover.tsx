@@ -1,7 +1,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import * as Slider from '@radix-ui/react-slider';
 import { Type } from 'lucide-react';
-import { useReaderStore } from '../../store/useReaderStore.ts';
+import { useReaderStore, type Theme } from '../../store/useReaderStore.ts';
 
 function Row({
   label,
@@ -33,13 +33,46 @@ function Row({
         max={max}
         step={step}
         onValueChange={([v]) => onChange(v)}
-        aria-label={label}
       >
         <Slider.Track className="relative h-1 grow rounded-full bg-rule">
           <Slider.Range className="absolute h-full rounded-full bg-celadon" />
         </Slider.Track>
-        <Slider.Thumb className="block size-4 rounded-full border-2 border-celadon bg-page shadow-sm" />
+        <Slider.Thumb aria-label={label} className="block size-4 rounded-full border-2 border-celadon bg-surface shadow-sm" />
       </Slider.Root>
+    </div>
+  );
+}
+
+const THEMES: { id: Theme; label: string }[] = [
+  { id: 'light', label: '亮色' },
+  { id: 'dark', label: '纯黑' },
+  { id: 'sepia', label: '羊皮纸' },
+];
+
+/** Each swatch is drawn in its own theme's colors, so it previews itself. */
+function ThemePicker() {
+  const theme = useReaderStore((s) => s.theme);
+  const setTheme = useReaderStore((s) => s.setTheme);
+  return (
+    <div role="radiogroup" aria-label="主题" className="grid grid-cols-3 gap-2">
+      {THEMES.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          role="radio"
+          aria-checked={theme === t.id}
+          onClick={() => setTheme(t.id)}
+          className="group flex flex-col items-center gap-1.5 text-xs text-ink-soft aria-checked:text-ink"
+        >
+          <span
+            data-theme={t.id}
+            className="grid h-11 w-full place-items-center rounded-md border border-rule bg-paper font-mincho text-lg text-ink group-aria-checked:outline-2 group-aria-checked:outline-offset-2 group-aria-checked:outline-celadon"
+          >
+            文
+          </span>
+          {t.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -52,16 +85,19 @@ export function TypographyPopover() {
     <Popover.Root>
       <Popover.Trigger
         className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
-        aria-label="排版设置"
+        aria-label="阅读设置"
       >
         <Type size={18} />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
           align="end"
+          // Return focus to the page, not this trigger, so Space keeps meaning play/pause.
+          onCloseAutoFocus={(e) => e.preventDefault()}
           sideOffset={8}
-          className="z-50 w-72 space-y-5 rounded-lg border border-rule bg-page p-5 font-ui shadow-[0_12px_32px_-12px_rgb(30_35_48/0.25)]"
+          className="z-50 w-72 space-y-5 rounded-lg border border-rule bg-surface p-5 font-ui shadow-[0_12px_32px_-12px_rgb(0_0_0/0.25)]"
         >
+          <ThemePicker />
           <Row label="字号" value={fontSize} display={`${fontSize}px`} min={14} max={30} step={1} onChange={setFontSize} />
           <Row
             label="行高"
@@ -86,9 +122,18 @@ export function TypographyPopover() {
               />
             </label>
           )}
-          <button type="button" onClick={resetTypography} className="text-sm text-celadon hover:text-celadon-deep">
-            恢复默认
-          </button>
+          <div className="flex items-center justify-between text-sm">
+            <button type="button" onClick={resetTypography} className="text-celadon hover:text-celadon-deep">
+              恢复默认排版
+            </button>
+            <Popover.Close
+              onClick={() => useReaderStore.getState().setShortcutsOpen(true)}
+              className="flex items-center gap-1.5 text-ink-soft hover:text-ink"
+            >
+              键盘快捷键
+              <kbd className="rounded border border-rule border-b-2 bg-paper px-1.5 text-xs">?</kbd>
+            </Popover.Close>
+          </div>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

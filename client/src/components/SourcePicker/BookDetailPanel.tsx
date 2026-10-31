@@ -83,7 +83,7 @@ export function BookDetailPanel({ summary, onBack }: { summary: BookSummary; onB
                 type="button"
                 disabled={loading}
                 onClick={() => open(resume ?? firstChapter)}
-                className="flex items-center gap-2 rounded-md bg-celadon px-4 py-2 text-sm font-medium text-page hover:bg-celadon-deep disabled:opacity-60"
+                className="flex items-center gap-2 rounded-md bg-celadon px-4 py-2 text-sm font-medium text-on-accent hover:bg-celadon-deep disabled:opacity-60"
               >
                 {loading && <LoaderCircle size={14} className="animate-spin" />}
                 {resume ? `继续读第 ${resume} 章` : '开始阅读'}
@@ -121,7 +121,7 @@ export function BookDetailPanel({ summary, onBack }: { summary: BookSummary; onB
           </div>
         )}
 
-        {error && <p className="mx-6 mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+        {error && <p className="mx-6 mb-4 rounded-md bg-danger-wash px-4 py-3 text-sm text-danger">{error}</p>}
 
         <section className="border-t border-rule pb-6">
           <div className="flex items-center justify-between px-6 pb-2 pt-5">

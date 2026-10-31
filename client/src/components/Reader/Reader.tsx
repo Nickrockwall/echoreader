@@ -91,7 +91,7 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
           type="button"
           disabled={!chapter.next}
           onClick={() => go(chapter.next)}
-          className="flex items-center gap-1 rounded-md bg-celadon px-4 py-2 text-page hover:bg-celadon-deep disabled:invisible"
+          className="flex items-center gap-1 rounded-md bg-celadon px-4 py-2 text-on-accent hover:bg-celadon-deep disabled:invisible"
         >
           {labels.next} <ChevronRight size={16} />
         </button>

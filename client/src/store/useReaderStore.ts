@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { BookDetail, ChapterContent, Lang, SourceId } from '../../../shared/types.ts';
+import type { AmbientId } from '../lib/ambient.ts';
 import { api } from '../lib/api.ts';
+
+export type Theme = 'light' | 'dark' | 'sepia';
 
 export interface ReadingPosition {
   source: SourceId;
@@ -47,6 +50,12 @@ interface ReaderState {
   continuous: boolean;
   /** Add generated furigana to every kanji word (Japanese). */
   autoFurigana: boolean;
+  theme: Theme;
+  /** Ambient track volumes, 0–1 (0 = off). */
+  ambient: Record<AmbientId, number>;
+  voiceVolume: number;
+  /** Lower the ambience while the voice is reading. */
+  ducking: boolean;
 
   // session
   book: BookDetail | null;
@@ -57,10 +66,16 @@ interface ReaderState {
   pickerSource: SourceId;
   pickedTokenId: string | null;
   lookup: LookupTarget | null;
+  shortcutsOpen: boolean;
   /** Set when a chapter finished playing and the next one should start by itself. */
   autoplayPending: boolean;
 
   setAutoFurigana(on: boolean): void;
+  setTheme(theme: Theme): void;
+  setAmbient(id: AmbientId, volume: number): void;
+  setVoiceVolume(volume: number): void;
+  setDucking(on: boolean): void;
+  setShortcutsOpen(open: boolean): void;
   openLookup(target: LookupTarget): void;
   closeLookup(): void;
   setRate(rate: Rate): void;
@@ -91,6 +106,10 @@ export const useReaderStore = create<ReaderState>()(
       voices: { ja: VOICES.ja[0].id, en: VOICES.en[0].id },
       continuous: true,
       autoFurigana: false,
+      theme: 'light',
+      ambient: { rain: 0, fire: 0, cafe: 0 },
+      voiceVolume: 1,
+      ducking: true,
 
       book: null,
       chapter: null,
@@ -100,9 +119,15 @@ export const useReaderStore = create<ReaderState>()(
       pickerSource: 'syosetu',
       pickedTokenId: null,
       lookup: null,
+      shortcutsOpen: false,
       autoplayPending: false,
 
       setAutoFurigana: (autoFurigana) => set({ autoFurigana }),
+      setTheme: (theme) => set({ theme }),
+      setAmbient: (id, volume) => set((s) => ({ ambient: { ...s.ambient, [id]: volume } })),
+      setVoiceVolume: (voiceVolume) => set({ voiceVolume }),
+      setDucking: (ducking) => set({ ducking }),
+      setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
       openLookup: (lookup) => set({ lookup, pickedTokenId: lookup.tokenId }),
       closeLookup: () => set({ lookup: null }),
       setRate: (rate) => set({ rate }),
@@ -151,6 +176,10 @@ export const useReaderStore = create<ReaderState>()(
         voices: s.voices,
         continuous: s.continuous,
         autoFurigana: s.autoFurigana,
+        theme: s.theme,
+        ambient: s.ambient,
+        voiceVolume: s.voiceVolume,
+        ducking: s.ducking,
       }),
     },
   ),

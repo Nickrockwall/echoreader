@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EchoReader</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%234C7E70'/><path d='M10 9v14M10 9h10M10 16h8M10 23h10' stroke='%23F7F7F3' stroke-width='2.6' fill='none' stroke-linecap='round'/></svg>" />
+    <script>
+      // Apply the saved theme before first paint (the app's store lives in localStorage).
+      try {
+        const theme = JSON.parse(localStorage.getItem('echoreader') || '{}').state?.theme;
+        if (theme) document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

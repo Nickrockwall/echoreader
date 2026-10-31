@@ -94,10 +94,10 @@ export function SourcePicker() {
   return (
     <Dialog.Root open={pickerOpen} onOpenChange={(open) => (open ? openPicker() : closePicker())}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/25 data-[state=open]:animate-[fade_160ms_ease-out]" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 data-[state=open]:animate-[fade_160ms_ease-out]" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed inset-y-0 left-0 z-50 flex w-full max-w-[34rem] flex-col bg-page font-ui shadow-[8px_0_40px_-16px_rgb(30_35_48/0.35)] focus:outline-none data-[state=open]:animate-[sheet_220ms_cubic-bezier(.2,.8,.2,1)]"
+          className="fixed inset-y-0 left-0 z-50 flex w-full max-w-[34rem] flex-col bg-surface font-ui shadow-[8px_0_40px_-16px_rgb(0_0_0/0.35)] focus:outline-none data-[state=open]:animate-[sheet_220ms_cubic-bezier(.2,.8,.2,1)]"
         >
           <header className="flex items-center justify-between px-6 pb-3 pt-5">
             <Dialog.Title className="text-base font-medium text-ink">找一本书</Dialog.Title>
@@ -117,7 +117,7 @@ export function SourcePicker() {
                 type="button"
                 aria-selected={id === pickerSource}
                 onClick={() => switchSource(id)}
-                className="rounded-md px-3 py-2 text-left aria-selected:bg-page aria-selected:shadow-sm"
+                className="rounded-md px-3 py-2 text-left aria-selected:bg-surface aria-selected:shadow-sm"
               >
                 <span className="block text-sm font-medium text-ink">{SOURCES[id].tab}</span>
                 <span className="block text-xs text-ink-faint">{SOURCES[id].site}</span>
@@ -132,12 +132,12 @@ export function SourcePicker() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={meta.placeholder}
               lang={meta.lang}
-              className="w-full rounded-md border border-rule bg-page py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-celadon focus:outline-none"
+              className="w-full rounded-md border border-rule bg-surface py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-celadon focus:outline-none"
             />
           </form>
 
           {status === 'error' && openError && (
-            <p className="mx-6 mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">打不开这一章：{openError}</p>
+            <p className="mx-6 mt-4 rounded-md bg-danger-wash px-4 py-3 text-sm text-danger">打不开这一章：{openError}</p>
           )}
 
           {selected ? (
@@ -154,7 +154,7 @@ export function SourcePicker() {
 
               <BookList books={items} onSelect={setSelected} />
 
-              {error && <p className="mx-6 my-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+              {error && <p className="mx-6 my-4 rounded-md bg-danger-wash px-4 py-3 text-sm text-danger">{error}</p>}
               {!loading && !error && result && items.length === 0 && (
                 <p className="px-6 py-10 text-center text-sm text-ink-soft">没有找到，换个关键词试试。</p>
               )}

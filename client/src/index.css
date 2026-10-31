@@ -1,13 +1,14 @@
 @import 'tailwindcss';
 
 /*
- * Palette: cool rice paper, indigo-sumi ink, celadon accent.
- * Lamp amber is reserved for the read-along highlight (phase 2).
- * Themes (dark / sepia) will override these variables on [data-theme].
+ * Palette: cool rice paper, indigo-sumi ink, celadon accent; lamp amber marks the voice.
+ * paper = the page you read on; surface = panels raised above it (cards, sheets, the player).
  */
-:root {
+:root,
+[data-theme='light'] {
+  color-scheme: light;
   --paper: #edefea;
-  --page: #f7f7f3;
+  --surface: #f7f7f3;
   --ink: #1e2330;
   --ink-soft: #5c6370;
   --ink-faint: #8b919b;
@@ -15,15 +16,57 @@
   --celadon: #4c7e70;
   --celadon-deep: #3b6559;
   --celadon-wash: #dfe9e4;
+  --on-accent: #f7f7f3;
   --lamp: #e9b949;
+  --danger: #9b2c2c;
+  --danger-wash: #f8e5e2;
 
   --reader-size: 19px;
   --reader-leading: 1.9;
 }
 
+/* OLED: true black so unlit pixels stay off; text is a soft grey-white, not pure white. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #000000;
+  --surface: #121416;
+  --ink: #dfe3dd;
+  --ink-soft: #a3aab1;
+  --ink-faint: #6c737b;
+  --rule: #25292d;
+  --celadon: #7fb3a3;
+  --celadon-deep: #a3cbbf;
+  --celadon-wash: #142520;
+  --on-accent: #06120e;
+  --lamp: #d9a440;
+  --danger: #f0a39a;
+  --danger-wash: #2a1412;
+}
+
+/* Parchment: warm, low-contrast paper for long sessions. */
+[data-theme='sepia'] {
+  color-scheme: light;
+  --paper: #f1e6cd;
+  --surface: #f8f0dc;
+  --ink: #3a2e20;
+  --ink-soft: #6b5a44;
+  --ink-faint: #9a876d;
+  --rule: #dccdab;
+  --celadon: #4f7a66;
+  --celadon-deep: #3d6352;
+  --celadon-wash: #e3e3c8;
+  --on-accent: #f8f0dc;
+  --lamp: #d49a2a;
+  --danger: #8f2d1f;
+  --danger-wash: #f3ddc9;
+}
+
 @theme inline {
   --color-paper: var(--paper);
-  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
@@ -48,6 +91,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
+  transition: background-color 200ms ease, color 200ms ease;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
 }

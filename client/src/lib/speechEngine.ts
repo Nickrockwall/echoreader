@@ -168,6 +168,32 @@ class SpeechEngine {
     if (index >= 0) void this.start(index, sentenceId, false);
   }
 
+  /** Jumps back to the start of the sentence being read and carries on at the normal rate. */
+  replaySentence() {
+    const id = this.currentSentence();
+    if (id) this.playFromSentence(id);
+  }
+
+  /**
+   * Moves the playhead by `deltaMs`, crossing into the neighbouring chunk when the jump runs
+   * past either end of this one. Keeps playing or paused as it was.
+   */
+  seekBy(deltaMs: number) {
+    if (!this.current) return;
+    const { index, count, status } = this.state;
+    const play = status === 'playing';
+    const duration = this.audio.duration * 1000;
+    const t = this.audio.currentTime * 1000 + deltaMs;
+    this.endRepeat();
+    if (t < 0 && index > 0) {
+      void this.start(index - 1, undefined, false, { fromEndMs: -t, play });
+    } else if (Number.isFinite(duration) && t > duration && index < count - 1) {
+      void this.start(index + 1, undefined, false, { atMs: t - duration, play });
+    } else {
+      this.audio.currentTime = Math.max(0, Math.min(t, Number.isFinite(duration) ? duration - 50 : t)) / 1000;
+    }
+  }
+
   /** Replays one sentence at REPEAT_RATE, then pauses at its end (shadowing practice). */
   repeatSentence(sentenceId = this.currentSentence()) {
     const index = sentenceId ? this.chunkOf(sentenceId) : -1;
@@ -253,7 +279,13 @@ class SpeechEngine {
     return this.start(index, undefined, false);
   }
 
-  private async start(index: number, sentenceId: string | undefined, repeat: boolean) {
+  private async start(
+    index: number,
+    sentenceId: string | undefined,
+    repeat: boolean,
+    /** Start position as ms from the chunk's end (seeking backwards across chunks); `play: false` loads paused. */
+    opts: { fromEndMs?: number; atMs?: number; play?: boolean } = {},
+  ) {
     if (!this.chunks.length) return;
     index = Math.max(0, Math.min(index, this.chunks.length - 1));
     const gen = ++this.generation;
@@ -269,10 +301,22 @@ class SpeechEngine {
         this.audio.src = prepared.url;
       }
       const [from, to] = sentenceId ? this.sentenceWindow(prepared, sentenceId) : [0, Number.POSITIVE_INFINITY];
-      this.audio.currentTime = from / 1000;
+      let at = opts.atMs ?? from;
+      if (opts.fromEndMs !== undefined) {
+        if (this.audio.readyState < HTMLMediaElement.HAVE_METADATA) {
+          await new Promise((r) => this.audio.addEventListener('loadedmetadata', r, { once: true }));
+          if (gen !== this.generation) return;
+        }
+        at = Math.max(0, this.audio.duration * 1000 - opts.fromEndMs);
+      }
+      this.audio.currentTime = at / 1000;
       // Set after src: loading a source resets playbackRate to defaultPlaybackRate.
       this.audio.playbackRate = repeat ? REPEAT_RATE : this.rate;
       if (repeat) this.repeatEnd = to;
+      if (opts.play === false) {
+        this.set({ status: 'paused' });
+        return;
+      }
       await this.audio.play();
       if (gen !== this.generation) return;
       this.set({ status: 'playing' });
