@@ -1,10 +1,12 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
-import type { SourceId } from '../../shared/types.ts';
+import type { Lang, SourceId, TtsRequest } from '../../shared/types.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
+import { audioPath, synthesize, VOICES } from './tts/edgeTTS.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
 const app = express();
+app.use(express.json({ limit: '64kb' }));
 
 function adapter(req: Request): SourceAdapter {
   const source = sources[req.params.source as SourceId];
@@ -42,6 +44,26 @@ app.get('/api/:source/books/:id/toc', async (req, res) => {
 
 app.get('/api/:source/books/:id/chapters/:index', async (req, res) => {
   res.json(await adapter(req).chapter(req.params.id, positiveInt(req.params.index)));
+});
+
+app.get('/api/tts/voices', (_req, res) => {
+  res.json(VOICES);
+});
+
+app.post('/api/tts', async (req, res) => {
+  const { text, lang, voice } = (req.body ?? {}) as Partial<TtsRequest>;
+  if (typeof text !== 'string' || (lang !== 'ja' && lang !== 'en')) {
+    throw new UpstreamError('需要 text 和 lang（ja 或 en）', 400);
+  }
+  res.json(await synthesize(text, lang as Lang, voice));
+});
+
+app.get('/api/tts/audio/:file', (req, res, next) => {
+  const id = req.params.file.replace(/\.mp3$/, '');
+  // Content-addressed: the same id always means the same audio.
+  res.sendFile(audioPath(id), { headers: { 'Content-Type': 'audio/mpeg' }, maxAge: '365d', immutable: true, dotfiles: 'allow' }, (err) => {
+    if (err) next(new UpstreamError('音频不存在或已被清理', 404));
+  });
 });
 
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {

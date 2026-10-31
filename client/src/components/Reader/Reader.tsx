@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ChapterContent } from '../../../../shared/types.ts';
 import { useSegmenter } from '../../hooks/useSegmenter.ts';
+import { AudioPlayer } from '../AudioPlayer/AudioPlayer.tsx';
 import type { Paragraph } from '../../lib/text.ts';
 import { useReaderStore } from '../../store/useReaderStore.ts';
 import { ParagraphView } from './ParagraphView.tsx';
@@ -89,6 +90,7 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
           {labels.next} <ChevronRight size={16} />
         </button>
       </nav>
+      <AudioPlayer chapter={chapter} paragraphs={body} />
     </article>
   );
 }

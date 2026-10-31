@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { BookDetail, ChapterContent, SourceId } from '../../../shared/types.ts';
+import type { BookDetail, ChapterContent, Lang, SourceId } from '../../../shared/types.ts';
 import { api } from '../lib/api.ts';
 
 export interface ReadingPosition {
@@ -11,11 +11,29 @@ export interface ReadingPosition {
   title: string;
 }
 
+export const RATES = [0.8, 1, 1.25] as const;
+export type Rate = (typeof RATES)[number];
+
+export const VOICES: Record<Lang, { id: string; label: string }[]> = {
+  ja: [
+    { id: 'ja-JP-NanamiNeural', label: 'Nanami · 女声' },
+    { id: 'ja-JP-KeitaNeural', label: 'Keita · 男声' },
+  ],
+  en: [
+    { id: 'en-US-JennyNeural', label: 'Jenny · 美式女声' },
+    { id: 'en-GB-RyanNeural', label: 'Ryan · 英式男声' },
+  ],
+};
+
 interface ReaderState {
   // persisted
   fontSize: number;
   lineHeight: number;
   lastPosition: ReadingPosition | null;
+  rate: Rate;
+  voices: Record<Lang, string>;
+  /** Keep reading into the next chapter when one finishes. */
+  continuous: boolean;
 
   // session
   book: BookDetail | null;
@@ -25,7 +43,13 @@ interface ReaderState {
   pickerOpen: boolean;
   pickerSource: SourceId;
   pickedTokenId: string | null;
+  /** Set when a chapter finished playing and the next one should start by itself. */
+  autoplayPending: boolean;
 
+  setRate(rate: Rate): void;
+  setVoice(lang: Lang, voice: string): void;
+  setContinuous(on: boolean): void;
+  setAutoplayPending(on: boolean): void;
   setFontSize(size: number): void;
   setLineHeight(lh: number): void;
   resetTypography(): void;
@@ -46,6 +70,9 @@ export const useReaderStore = create<ReaderState>()(
       fontSize: DEFAULT_FONT_SIZE,
       lineHeight: DEFAULT_LINE_HEIGHT,
       lastPosition: null,
+      rate: 1,
+      voices: { ja: VOICES.ja[0].id, en: VOICES.en[0].id },
+      continuous: true,
 
       book: null,
       chapter: null,
@@ -54,7 +81,12 @@ export const useReaderStore = create<ReaderState>()(
       pickerOpen: false,
       pickerSource: 'syosetu',
       pickedTokenId: null,
+      autoplayPending: false,
 
+      setRate: (rate) => set({ rate }),
+      setVoice: (lang, voice) => set((s) => ({ voices: { ...s.voices, [lang]: voice } })),
+      setContinuous: (continuous) => set({ continuous }),
+      setAutoplayPending: (autoplayPending) => set({ autoplayPending }),
       setFontSize: (fontSize) => set({ fontSize }),
       setLineHeight: (lineHeight) => set({ lineHeight }),
       resetTypography: () => set({ fontSize: DEFAULT_FONT_SIZE, lineHeight: DEFAULT_LINE_HEIGHT }),
@@ -89,7 +121,14 @@ export const useReaderStore = create<ReaderState>()(
     }),
     {
       name: 'echoreader',
-      partialize: (s) => ({ fontSize: s.fontSize, lineHeight: s.lineHeight, lastPosition: s.lastPosition }),
+      partialize: (s) => ({
+        fontSize: s.fontSize,
+        lineHeight: s.lineHeight,
+        lastPosition: s.lastPosition,
+        rate: s.rate,
+        voices: s.voices,
+        continuous: s.continuous,
+      }),
     },
   ),
 );

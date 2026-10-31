@@ -63,6 +63,28 @@ export interface ChapterContent {
   next: number | null;
 }
 
+/** One spoken word: character range in the synthesized text plus audio time in ms. */
+export interface TtsWord {
+  offset: number;
+  length: number;
+  start: number;
+  end: number;
+}
+
+export interface TtsRequest {
+  text: string;
+  lang: Lang;
+  voice?: string;
+}
+
+export interface TtsResult {
+  id: string;
+  voice: string;
+  /** URL of the mp3, served by the API. */
+  audio: string;
+  words: TtsWord[];
+}
+
 export interface ApiError {
   error: string;
 }
