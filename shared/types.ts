@@ -1,6 +1,6 @@
 // Types shared by server and client. Import with `import type` only.
 
-export type SourceId = 'syosetu' | 'gutenberg';
+export type SourceId = 'syosetu' | 'aozora' | 'gutenberg' | 'standardebooks' | 'local';
 export type Lang = 'ja' | 'en';
 
 export interface BookSummary {

@@ -162,7 +162,7 @@ function refine(sections: ParsedChapter[]): ParsedChapter[] {
   return out;
 }
 
-function splitChapters(raw: string): ParsedChapter[] {
+export function splitChapters(raw: string): ParsedChapter[] {
   const paragraphs = toParagraphs(stripBoilerplate(raw));
   const romanHeadings = paragraphs.filter((p) => ROMAN_RE.test(p)).length >= 3;
 

@@ -54,6 +54,16 @@ export const api = {
     cancel: (source: SourceId, id: string) =>
       get<OfflineStatus>(`/${source}/books/${encodeURIComponent(id)}/offline`, undefined, { method: 'DELETE' }),
   },
+  library: {
+    /** Uploads an EPUB or TXT file; the server parses it and keeps it in the local library. */
+    import: (file: File, lang?: Lang) =>
+      get<BookDetail>(`/local/import?name=${encodeURIComponent(file.name)}${lang ? `&lang=${lang}` : ''}`, undefined, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: file,
+      }),
+    remove: (id: string) => get<{ ok: true }>(`/local/books/${encodeURIComponent(id)}`, undefined, { method: 'DELETE' }),
+  },
   vocab: {
     list: () => get<VocabItem[]>('/vocab'),
     save: (item: VocabInput) => post<VocabItem>('/vocab', item),

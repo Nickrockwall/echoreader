@@ -8,6 +8,7 @@ import { ensureDictionaries } from './dict/bootstrap.ts';
 import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
+import { deleteBook, importBook, MAX_IMPORT_BYTES } from './sources/local.ts';
 import { cancelOffline, offlineStatus, startOffline } from './sources/offline.ts';
 import { ttsRoute } from './routes/ttsRoute.ts';
 import { deleteVocab, listVocab, saveVocab, vocabToAnki } from './user/vocab.ts';
@@ -22,6 +23,8 @@ function adapter(req: Request): SourceAdapter {
   return source;
 }
 
+const langParam = (v: unknown): Lang | undefined => (v === 'ja' || v === 'en' ? v : undefined);
+
 function positiveInt(value: unknown, fallback = 1) {
   const n = Number(value ?? fallback);
   if (!Number.isInteger(n) || n < 1) throw new UpstreamError(`参数必须是正整数：${value}`, 400);
@@ -29,6 +32,19 @@ function positiveInt(value: unknown, fallback = 1) {
 }
 
 app.get('/api/health', (_req, res) => {
+  res.json({ ok: true });
+});
+
+// Local import: the file is the request body; its name and an optional language come in the query.
+app.post('/api/local/import', express.raw({ type: () => true, limit: MAX_IMPORT_BYTES }), (req, res) => {
+  const name = String(req.query.name ?? '').slice(0, 200) || 'book.txt';
+  const lang = langParam(req.query.lang) ?? null;
+  const body = Buffer.isBuffer(req.body) ? new Uint8Array(req.body) : new Uint8Array();
+  res.json(importBook(body, name, lang));
+});
+
+app.delete('/api/local/books/:id', (req, res) => {
+  deleteBook(req.params.id);
   res.json({ ok: true });
 });
 
@@ -81,8 +97,6 @@ app.post('/api/ja/furigana', async (req, res) => {
   res.json(await furigana(texts));
 });
 
-const langParam = (v: unknown): Lang | undefined => (v === 'ja' || v === 'en' ? v : undefined);
-
 app.get('/api/vocab', (req, res) => {
   res.json(listVocab(langParam(req.query.lang)));
 });
@@ -120,6 +134,10 @@ if (existsSync(path.join(CLIENT_DIST, 'index.html'))) {
 }
 
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  if ((err as { status?: number }).status === 413) {
+    res.status(413).json({ error: `文件太大了，最多 ${MAX_IMPORT_BYTES / 1024 / 1024} MB` });
+    return;
+  }
   const status = err instanceof UpstreamError ? err.status : 500;
   if (status >= 500) console.error(`[${req.method} ${req.url}]`, err);
   res.status(status).json({ error: err.message });

@@ -1,6 +1,6 @@
 import { CircleCheck, Download, LoaderCircle, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { BookDetail, OfflineStatus } from '../../../../shared/types.ts';
+import type { BookDetail, OfflineStatus, SourceId } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
 
 const POLL_MS = 1500;
@@ -39,10 +39,13 @@ async function saveToDevice(book: BookDetail, onProgress: (n: number) => void, s
   await Promise.all(Array.from({ length: DEVICE_CONCURRENCY }, worker));
 }
 
+/** Seconds per chapter for sources fetched page by page (kept slow to stay polite); the rest are one file. */
+const SECONDS_PER_CHAPTER: Partial<Record<SourceId, number>> = { syosetu: 1, standardebooks: 0.7 };
+
 function minutes(book: BookDetail) {
-  // なろう pages are fetched one per second to stay polite; Gutenberg is a single file.
-  if (book.source !== 'syosetu') return '几秒钟';
-  const m = Math.ceil(book.chapterCount / 60);
+  const perChapter = SECONDS_PER_CHAPTER[book.source];
+  if (!perChapter || book.chapterCount * perChapter < 20) return '几秒钟';
+  const m = Math.ceil((book.chapterCount * perChapter) / 60);
   return m <= 1 ? '不到 1 分钟' : `约 ${m} 分钟`;
 }
 

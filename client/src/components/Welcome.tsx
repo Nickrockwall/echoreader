@@ -73,6 +73,13 @@ export function Welcome() {
         >
           找英文经典
         </button>
+        <button
+          type="button"
+          onClick={() => openPicker('local')}
+          className="ui-ghost rounded-md border border-rule px-5 py-3 text-sm font-medium text-ink hover:border-celadon"
+        >
+          导入自己的书
+        </button>
       </div>
 
       <p className="mt-16 text-xs text-ink-faint">

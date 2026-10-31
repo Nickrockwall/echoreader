@@ -59,6 +59,14 @@ const SECTIONS: { title: string; items: ReactNode[] }[] = [
         <A href="https://syosetu.com/site/rule/">利用規約</A>，不要转载。
       </>,
       <>
+        <A href="https://www.aozora.gr.jp/">青空文库</A>：收录著作权已过期的作品（作品和译者都没有著作权的才会显示）。按其{' '}
+        <A href="https://www.aozora.gr.jp/guide/kijyunn.html">使用规范</A>，每部作品最后一章末尾保留了底本信息和输入、校对志愿者的名字。
+      </>,
+      <>
+        <A href="https://standardebooks.org/">Standard Ebooks</A>：公有领域书籍的精校版，其校订与排版以{' '}
+        <A href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</A> 放弃权利；本应用与 Standard Ebooks 无关联。
+      </>,
+      <>
         <A href="https://www.gutenberg.org/">Project Gutenberg</A>：书籍在美国属于公有领域，经{' '}
         <A href="https://gutendex.com/">Gutendex</A> 检索。「Project Gutenberg」是其注册商标；本应用会去掉原书的许可声明后再显示正文，与 Project Gutenberg 无关联。
       </>,

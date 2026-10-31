@@ -1,5 +1,8 @@
 import type { BookDetail, ChapterContent, SearchResult, SourceId, TocPage } from '../../../shared/types.ts';
+import { aozora } from './aozora.ts';
 import { gutendex } from './gutendex.ts';
+import { local } from './local.ts';
+import { standardEbooks } from './standardEbooks.ts';
 import { syosetu } from './syosetu.ts';
 
 export interface SourceAdapter {
@@ -12,5 +15,8 @@ export interface SourceAdapter {
 
 export const sources: Record<SourceId, SourceAdapter> = {
   syosetu,
+  aozora,
   gutenberg: gutendex,
+  standardebooks: standardEbooks,
+  local,
 };

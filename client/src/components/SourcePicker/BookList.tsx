@@ -6,6 +6,7 @@ function chapterLabel(book: BookSummary) {
     if (book.chapterCount === 1) return '短編';
     return `全${book.chapterCount}話${book.complete ? '・完結' : '・連載中'}`;
   }
+  if (book.source === 'local' && book.chapterCount) return `${book.chapterCount} 章`;
   return null;
 }
 

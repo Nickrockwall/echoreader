@@ -1,31 +1,73 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { LoaderCircle, Search, X } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
-import type { BookSummary, SearchResult, SourceId } from '../../../../shared/types.ts';
+import type { BookDetail, BookSummary, SearchResult, SourceId } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
 import { useReaderStore } from '../../store/useReaderStore.ts';
 import { BookDetailPanel } from './BookDetailPanel.tsx';
 import { BookList } from './BookList.tsx';
+import { ImportPanel } from './ImportPanel.tsx';
 
-const SOURCES: Record<
-  SourceId,
-  { tab: string; site: string; placeholder: string; popular: string; idPattern: RegExp; lang: 'ja' | 'en' }
-> = {
+interface SourceMeta {
+  tab: string;
+  /** What kind of books the tab holds. */
+  kind: string;
+  /** Shown while a slow first request is pending. */
+  site: string;
+  placeholder: string;
+  popular: string;
+  lang: 'ja' | 'en';
+  /** A pasted book number or link that opens the book directly. */
+  parseId?(q: string): string | null;
+}
+
+const SOURCES: Record<SourceId, SourceMeta> = {
   syosetu: {
-    tab: '日本語',
+    tab: 'なろう',
+    kind: '日语网络小说',
     site: '小説家になろう',
     placeholder: '书名、作者或 Nコード（如 n9669bk）',
     popular: '今日热门',
-    idPattern: /^n\d{4}[a-z]{1,3}$/i,
     lang: 'ja',
+    parseId: (q) => q.match(/^(?:https?:\/\/ncode\.syosetu\.com\/)?(n\d{4}[a-z]{1,3})\/?$/i)?.[1].toLowerCase() ?? null,
+  },
+  aozora: {
+    tab: '青空文库',
+    kind: '日语经典',
+    site: '青空文庫',
+    placeholder: '书名或作者（汉字、假名都行）',
+    popular: '访问排行',
+    lang: 'ja',
+    parseId: (q) => q.match(/^\d+$/)?.[0] ?? q.match(/aozora\.gr\.jp\/cards\/\d+\/card(\d+)\.html/)?.[1] ?? null,
   },
   gutenberg: {
-    tab: 'English',
+    tab: 'Gutenberg',
+    kind: '英语经典',
     site: 'Project Gutenberg',
     placeholder: '书名、作者或书号（如 1342）',
     popular: '下载最多',
-    idPattern: /^\d+$/,
     lang: 'en',
+    parseId: (q) => q.match(/^(?:https?:\/\/www\.gutenberg\.org\/ebooks\/)?(\d+)\/?$/)?.[1] ?? null,
+  },
+  standardebooks: {
+    tab: 'Standard Ebooks',
+    kind: '英语精排',
+    site: 'Standard Ebooks',
+    placeholder: '书名、作者或 Standard Ebooks 链接',
+    popular: '最受欢迎',
+    lang: 'en',
+    parseId: (q) =>
+      q
+        .match(/standardebooks\.org\/ebooks\/([a-z0-9_\/-]+?)\/?(?:\/text.*)?$/)?.[1]
+        .replace(/\//g, '~') ?? null,
+  },
+  local: {
+    tab: '我的书',
+    kind: '导入 EPUB / TXT',
+    site: '本机书库',
+    placeholder: '在导入的书里搜索',
+    popular: '已导入',
+    lang: 'ja',
   },
 };
 
@@ -79,12 +121,23 @@ export function SourcePicker() {
     openPicker(source);
   };
 
+  const imported = (book: BookDetail) => {
+    setItems((prev) => [book, ...prev.filter((b) => b.id !== book.id)]);
+    setSelected(book);
+  };
+
+  const deleted = (book: BookSummary) => {
+    setItems((prev) => prev.filter((b) => !(b.source === book.source && b.id === book.id)));
+    setSelected(null);
+  };
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     const q = query.trim();
-    // A bare Nコード / book number opens that book directly.
-    if (meta.idPattern.test(q)) {
-      setSelected({ source: pickerSource, id: q.toLowerCase(), lang: meta.lang, title: q, author: '' });
+    // A bare book number or a link to the book opens it directly.
+    const id = meta.parseId?.(q);
+    if (id) {
+      setSelected({ source: pickerSource, id, lang: meta.lang, title: q, author: '' });
       return;
     }
     setSelected(null);
@@ -109,18 +162,21 @@ export function SourcePicker() {
             </Dialog.Close>
           </header>
 
-          <div role="tablist" aria-label="内容源" className="mx-6 grid grid-cols-2 rounded-lg bg-paper p-1">
+          <div role="tablist" aria-label="内容源" className="mx-6 flex gap-0.5 overflow-x-auto rounded-lg bg-paper p-1 [scrollbar-width:none]">
             {(Object.keys(SOURCES) as SourceId[]).map((id) => (
               <button
                 key={id}
                 role="tab"
                 type="button"
                 aria-selected={id === pickerSource}
-                onClick={() => switchSource(id)}
-                className="rounded-md px-3 py-2 text-left aria-selected:bg-surface aria-selected:shadow-sm"
+                onClick={(e) => {
+                  e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                  switchSource(id);
+                }}
+                className="shrink-0 rounded-md px-2.5 py-2 text-left aria-selected:bg-surface aria-selected:shadow-sm"
               >
-                <span className="block text-sm font-medium text-ink">{SOURCES[id].tab}</span>
-                <span className="block text-xs text-ink-faint">{SOURCES[id].site}</span>
+                <span className="block whitespace-nowrap text-sm font-medium text-ink">{SOURCES[id].tab}</span>
+                <span className="block whitespace-nowrap text-xs text-ink-faint">{SOURCES[id].kind}</span>
               </button>
             ))}
           </div>
@@ -136,12 +192,19 @@ export function SourcePicker() {
             />
           </form>
 
+          {pickerSource === 'local' && !selected && <ImportPanel onImported={imported} />}
+
           {status === 'error' && openError && (
             <p className="mx-6 mt-4 rounded-md bg-danger-wash px-4 py-3 text-sm text-danger">打不开这一章：{openError}</p>
           )}
 
           {selected ? (
-            <BookDetailPanel key={`${selected.source}:${selected.id}`} summary={selected} onBack={() => setSelected(null)} />
+            <BookDetailPanel
+              key={`${selected.source}:${selected.id}`}
+              summary={selected}
+              onBack={() => setSelected(null)}
+              onDeleted={deleted}
+            />
           ) : (
             <div className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-rule">
               <p className="px-6 pb-1 pt-4 text-xs text-ink-faint">
@@ -156,7 +219,9 @@ export function SourcePicker() {
 
               {error && <p className="mx-6 my-4 rounded-md bg-danger-wash px-4 py-3 text-sm text-danger">{error}</p>}
               {!loading && !error && result && items.length === 0 && (
-                <p className="px-6 py-10 text-center text-sm text-ink-soft">没有找到，换个关键词试试。</p>
+                <p className="px-6 py-10 text-center text-sm text-ink-soft">
+                  {pickerSource === 'local' && !submitted ? '还没有导入的书。' : '没有找到，换个关键词试试。'}
+                </p>
               )}
 
               <div className="px-6 py-6">

@@ -18,6 +18,8 @@ EchoReader 的代码以 [MIT](LICENSE) 授权。下面列出应用使用的第�
 
 - **英文释义**：[英文维基词典](https://en.wiktionary.org/) 贡献者，经 [Free Dictionary API](https://dictionaryapi.dev/) 获取，CC BY-SA 3.0；单词发音录音来自 Wikimedia Commons，各自的许可显示在查词卡片上
 - **小説家になろう**：作品版权属于各位作者；本应用只供在自己的设备上阅读，请遵守 [利用規約](https://syosetu.com/site/rule/)
+- **青空文库**：作品均为著作权已过期的公有领域作品（本应用只收录作品和译者都没有著作权的条目），作品清单来自青空文库公开的[作品目录](https://www.aozora.gr.jp/index_pages/person_all.html)。按青空文库的[收录文件使用规范](https://www.aozora.gr.jp/guide/kijyunn.html)，每部作品最后一章末尾保留了底本信息和输入、校对志愿者的名字
+- **Standard Ebooks**：书籍在美国属于公有领域，Standard Ebooks 对其校订、排版工作以 [CC0](https://creativecommons.org/publicdomain/zero/1.0/) 放弃权利；本应用读取其网页版正文与封面缩略图，与 Standard Ebooks 无关联
 - **Project Gutenberg**：书籍在美国属于公有领域，经 [Gutendex](https://gutendex.com/) 检索。「Project Gutenberg」是其注册商标；本应用显示正文前会去掉原书附带的许可声明，与 Project Gutenberg 无关联
 - **朗读**：Microsoft Edge 的在线朗读服务（Azure 神经网络声线，如 Nanami、Keita、Jenny、Ryan），经 [node-edge-tts](https://github.com/SchneeHertz/node-edge-tts)（MIT）；这不是微软面向第三方的正式服务。「元气少女」等预设是调整音调的变体，并非独立声线
 - **字体**：Shippori Mincho、Literata、Zen Kaku Gothic New，以及 JRPG 主题的标题字体 Anton、Noto Sans SC，经 Google Fonts，[SIL Open Font License 1.1](https://openfontlicense.org/)
@@ -31,6 +33,6 @@ EchoReader 的代码以 [MIT](LICENSE) 授权。下面列出应用使用的第�
 | [React](https://react.dev/)、[Zustand](https://github.com/pmndrs/zustand)、[Radix UI](https://www.radix-ui.com/) | 界面 | MIT |
 | [Lucide](https://lucide.dev/) | 图标 | ISC |
 | [Tailwind CSS](https://tailwindcss.com/)、[Vite](https://vite.dev/) | 样式、构建 | MIT |
-| [Express](https://expressjs.com/)、[cheerio](https://cheerio.js.org/) | 服务端、网页解析 | MIT |
+| [Express](https://expressjs.com/)、[cheerio](https://cheerio.js.org/)、[fflate](https://github.com/101arrowz/fflate) | 服务端、网页解析、解压 EPUB 和青空文库目录 | MIT |
 
 完整的依赖及其许可见 `package-lock.json`，可用 `npx license-checker --summary` 查看。

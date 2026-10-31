@@ -3,6 +3,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import type { Lang, VocabInput, VocabItem } from '../../../shared/types.ts';
+import { sources } from '../sources/index.ts';
 import { UpstreamError } from '../lib/http.ts';
 
 const DATA_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data');
@@ -107,7 +108,7 @@ export function saveVocab(body: Partial<VocabInput>): VocabItem {
       str(body.meaning, 500) ?? '',
       sentence,
       offset,
-      body.source === 'syosetu' || body.source === 'gutenberg' ? body.source : null,
+      typeof body.source === 'string' && body.source in sources ? body.source : null,
       str(body.bookId, 40) ?? null,
       str(body.bookTitle, 200) ?? null,
       Number.isInteger(body.chapter) ? body.chapter! : null,

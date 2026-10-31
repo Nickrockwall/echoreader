@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, LoaderCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { BookDetail, BookSummary, TocPage } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
@@ -8,13 +8,22 @@ import { OfflineControl } from './OfflineControl.tsx';
 
 const FRONT_MATTER = 'Front matter';
 
-export function BookDetailPanel({ summary, onBack }: { summary: BookSummary; onBack(): void }) {
+export function BookDetailPanel({
+  summary,
+  onBack,
+  onDeleted,
+}: {
+  summary: BookSummary;
+  onBack(): void;
+  onDeleted(book: BookSummary): void;
+}) {
   const { openChapter, lastPosition, status } = useReaderStore();
   const [detail, setDetail] = useState<BookDetail | null>(null);
   const [toc, setToc] = useState<TocPage | null>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -46,6 +55,16 @@ export function BookDetailPanel({ summary, onBack }: { summary: BookSummary; onB
   const firstChapter = toc && page === 1 ? (toc.entries.find((e) => e.title !== FRONT_MATTER)?.index ?? 1) : 1;
   const open = (index: number) => openChapter(book.source, book.id, index);
   const loading = status === 'loading';
+
+  const remove = async () => {
+    try {
+      await api.library.remove(book.id);
+      onDeleted(book);
+    } catch (e) {
+      setError((e as Error).message);
+      setConfirmDelete(false);
+    }
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -98,6 +117,33 @@ export function BookDetailPanel({ summary, onBack }: { summary: BookSummary; onB
                   从头读
                 </button>
               )}
+              {book.source === 'local' &&
+                (confirmDelete ? (
+                  <span className="flex items-center gap-1 text-sm">
+                    <button
+                      type="button"
+                      onClick={remove}
+                      className="rounded-md px-3 py-2 font-medium text-danger hover:bg-danger-wash"
+                    >
+                      确认删除
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      className="rounded-md px-3 py-2 text-ink-soft hover:bg-celadon-wash hover:text-ink"
+                    >
+                      取消
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-ink-soft hover:bg-danger-wash hover:text-danger"
+                  >
+                    <Trash2 size={14} /> 从书架删除
+                  </button>
+                ))}
             </div>
           </div>
         </section>

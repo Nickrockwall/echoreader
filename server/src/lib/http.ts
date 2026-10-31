@@ -6,6 +6,8 @@ const HOST_INTERVAL_MS: Record<string, number> = {
   'ncode.syosetu.com': 1000,
   'api.syosetu.com': 300,
   'www.gutenberg.org': 500,
+  'www.aozora.gr.jp': 500,
+  'standardebooks.org': 700,
   'api.dictionaryapi.dev': 100,
 };
 
@@ -49,4 +51,8 @@ export async function fetchText(url: string, timeoutMs?: number) {
 
 export async function fetchJson<T>(url: string, timeoutMs?: number): Promise<T> {
   return (await request(url, timeoutMs)).json() as Promise<T>;
+}
+
+export async function fetchBytes(url: string, timeoutMs?: number): Promise<Uint8Array> {
+  return new Uint8Array(await (await request(url, timeoutMs)).arrayBuffer());
 }
