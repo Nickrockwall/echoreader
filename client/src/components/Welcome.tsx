@@ -25,7 +25,7 @@ export function Welcome() {
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-6 py-20 sm:px-10">
-      <h1 className="font-mincho text-[clamp(2.5rem,7vw,4.25rem)] font-semibold leading-[1.15] tracking-[0.02em] text-ink">
+      <h1 className="ui-hero font-mincho text-[clamp(2.5rem,7vw,4.25rem)] font-semibold leading-[1.15] tracking-[0.02em] text-ink">
         读一句，
         <br />
         听一句，
@@ -36,7 +36,7 @@ export function Welcome() {
         EchoReader 从小説家になろう 和 Project Gutenberg 载入日语、英语小说，每个词都能点开查释义。试着点下面的词：
       </p>
 
-      <section className="mt-12 space-y-6 border-l-2 border-celadon pl-6">
+      <section className="ui-sample mt-12 space-y-6 border-l-2 border-celadon pl-6">
         <div className="text-[clamp(1.35rem,3.2vw,1.75rem)]">
           <SampleLine lang="ja" lines={SAMPLE_JA} />
         </div>
@@ -51,7 +51,7 @@ export function Welcome() {
             type="button"
             disabled={status === 'loading'}
             onClick={() => openChapter(lastPosition.source, lastPosition.bookId, lastPosition.chapter)}
-            className="flex items-center gap-2 rounded-md bg-celadon px-5 py-3 text-sm font-medium text-on-accent hover:bg-celadon-deep disabled:opacity-60"
+            className="ui-primary flex items-center gap-2 rounded-md bg-celadon px-5 py-3 text-sm font-medium text-on-accent hover:bg-celadon-deep disabled:opacity-60"
           >
             <BookOpen size={16} />
             继续读《{lastPosition.title}》第 {lastPosition.chapter} 章
@@ -61,7 +61,7 @@ export function Welcome() {
           type="button"
           onClick={() => openPicker('syosetu')}
           className={`rounded-md px-5 py-3 text-sm font-medium ${
-            lastPosition ? 'border border-rule text-ink hover:border-celadon' : 'bg-celadon text-on-accent hover:bg-celadon-deep'
+            lastPosition ? 'ui-ghost border border-rule text-ink hover:border-celadon' : 'ui-primary bg-celadon text-on-accent hover:bg-celadon-deep'
           }`}
         >
           找日语小说
@@ -69,7 +69,7 @@ export function Welcome() {
         <button
           type="button"
           onClick={() => openPicker('gutenberg')}
-          className="rounded-md border border-rule px-5 py-3 text-sm font-medium text-ink hover:border-celadon"
+          className="ui-ghost rounded-md border border-rule px-5 py-3 text-sm font-medium text-ink hover:border-celadon"
         >
           找英文经典
         </button>

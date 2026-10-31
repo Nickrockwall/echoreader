@@ -5,7 +5,7 @@ import type { AmbientId } from '../lib/ambient.ts';
 import type { VoiceConfig } from '../lib/speechEngine.ts';
 import { api } from '../lib/api.ts';
 
-export type Theme = 'light' | 'dark' | 'sepia';
+export type Theme = 'jrpg' | 'light' | 'dark' | 'sepia';
 
 export interface ReadingPosition {
   source: SourceId;
@@ -144,7 +144,7 @@ export const useReaderStore = create<ReaderState>()(
       continuous: true,
       autoFurigana: false,
       vertical: false,
-      theme: 'light',
+      theme: 'jrpg',
       ambient: { rain: 0, fire: 0, cafe: 0 },
       voiceVolume: 1,
       ducking: true,
@@ -211,7 +211,7 @@ export const useReaderStore = create<ReaderState>()(
     {
       name: 'echoreader',
       // v1: one Edge voice name per language (`voices`) became VoicePreferences presets.
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Record<string, unknown>;
         if (version < 1) {
@@ -223,6 +223,9 @@ export const useReaderStore = create<ReaderState>()(
           };
           delete state.voices;
         }
+        // v2: the JRPG look became the default; readers still on the old default move with it,
+        // a deliberately chosen dark or sepia theme is kept.
+        if (version < 2 && (state.theme === undefined || state.theme === 'light')) state.theme = 'jrpg';
         return state as unknown as ReaderState;
       },
       partialize: (s) => ({

@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="jrpg">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>EchoReader</title>
-    <meta name="theme-color" content="#edefea" />
+    <meta name="theme-color" content="#0a0a0c" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,7 +13,10 @@
     <script>
       // Apply the saved theme before first paint (the app's store lives in localStorage).
       try {
-        const theme = JSON.parse(localStorage.getItem('echoreader') || '{}').state?.theme;
+        const saved = JSON.parse(localStorage.getItem('echoreader') || '{}');
+        let theme = saved.state?.theme;
+        // Same rule as the store's v2 migration: the old default ("light") moves to "jrpg".
+        if ((saved.version ?? 0) < 2 && (!theme || theme === 'light')) theme = 'jrpg';
         if (theme) document.documentElement.dataset.theme = theme;
       } catch {}
     </script>
@@ -21,7 +24,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Shippori+Mincho:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Noto+Sans+SC:wght@900&family=Shippori+Mincho:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
     />
   </head>
   <body>

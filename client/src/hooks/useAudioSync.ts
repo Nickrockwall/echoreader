@@ -12,10 +12,14 @@ export function useSpeechState(): EngineState {
   );
 }
 
-/** Builds a DOM Range over [from, to) of a paragraph's plain text, skipping ruby readings. */
+/**
+ * Builds a DOM Range over [from, to) of a paragraph's plain text, skipping text that isn't part
+ * of it: ruby readings and decorations such as a speech bubble's speaker label.
+ */
 function rangeInParagraph(p: Element, from: number, to: number): Range | null {
   const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, {
-    acceptNode: (n) => (n.parentElement?.closest('rt, rp') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    acceptNode: (n) =>
+      n.parentElement?.closest('rt, rp, [data-skip-text]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
   });
   const range = document.createRange();
   let pos = 0;
@@ -44,7 +48,7 @@ export function useAudioSync() {
   useEffect(() => {
     const highlights = typeof CSS !== 'undefined' && 'highlights' in CSS ? CSS.highlights : null;
     let frame = 0;
-    let sentenceEl: Element | null = null;
+    let sentenceId: string | null = null;
     let wordKey = '';
     let lastManualScroll = 0;
 
@@ -56,11 +60,16 @@ export function useAudioSync() {
     window.addEventListener('touchmove', markManual, { passive: true });
     window.addEventListener('keydown', keys);
 
-    const setSentence = (el: Element | null) => {
-      if (el === sentenceEl) return;
-      sentenceEl?.removeAttribute('data-reading');
-      el?.setAttribute('data-reading', '');
-      sentenceEl = el;
+    // A sentence can span several elements (split around a speech bubble's edge); mark them all.
+    const sentenceEls = (id: string | null) => (id ? document.querySelectorAll(`[data-sid="${id}"]`) : []);
+
+    const setSentence = (id: string | null) => {
+      if (id === sentenceId) return;
+      sentenceEls(sentenceId).forEach((e) => e.removeAttribute('data-reading'));
+      const els = sentenceEls(id);
+      els.forEach((e) => e.setAttribute('data-reading', ''));
+      sentenceId = id;
+      const el = els[0];
       if (el && performance.now() - lastManualScroll > MANUAL_SCROLL_GRACE_MS) {
         const r = el.getBoundingClientRect();
         // Vertical text scrolls sideways, so the sentence can also leave through the left or right.
@@ -95,9 +104,9 @@ export function useAudioSync() {
       }
       const t = speech.audio.currentTime * 1000;
       // A slow repeat starts a little before its sentence; keep the highlight on that sentence.
-      const sentenceId =
-        speech.snapshot.repeating ?? prepared.chunk.sentences[Math.max(0, lastStarted(prepared.sentenceStarts, t))].id;
-      setSentence(document.querySelector(`[data-sid="${sentenceId}"]`));
+      setSentence(
+        speech.snapshot.repeating ?? prepared.chunk.sentences[Math.max(0, lastStarted(prepared.sentenceStarts, t))].id,
+      );
       // Keep the word lit through the short gaps between words, but not after the last one ends.
       const wi = lastStarted(prepared.wordStarts, t);
       const word = prepared.words[wi];

@@ -101,7 +101,9 @@ function Entry({
             {(s.pos.length > 0 || s.notes.length > 0) && labelOf(i) && (
               <p className="mb-0.5 flex flex-wrap gap-x-2 text-xs text-celadon-deep">
                 {s.pos.map((p) => (
-                  <span key={p}>{lang === 'en' ? (EN_POS[p] ?? p) : p}</span>
+                  <span key={p} className="ui-pos">
+                    {lang === 'en' ? (EN_POS[p] ?? p) : p}
+                  </span>
                 ))}
                 {s.notes.map((n) => (
                   <span key={n} className="text-ink-faint">
@@ -146,6 +148,8 @@ export function WordPopover() {
   const saveVocab = useVocabStore((s) => s.save);
   const removeVocab = useVocabStore((s) => s.remove);
   const [saveError, setSaveError] = useState(false);
+  // Bumped on each successful save; keys the JRPG theme's "BAM!" burst so it replays.
+  const [captured, setCaptured] = useState(0);
   const [state, setState] = useState<{ key: string; result?: DictResult; error?: string } | null>(null);
   const [speaking, setSpeaking] = useState(false);
 
@@ -204,6 +208,7 @@ export function WordPopover() {
           ? { source: chapter.source, bookId: chapter.bookId, bookTitle: book.title, chapter: chapter.index }
           : {}),
       });
+      setCaptured((n) => n + 1);
     } catch {
       setSaveError(true);
     }
@@ -240,8 +245,13 @@ export function WordPopover() {
           collisionPadding={{ top: 64, bottom: window.innerWidth < 640 ? 156 : 104, left: 16, right: 16 }}
           onOpenAutoFocus={(e) => e.preventDefault()}
           aria-label={`「${lookup.word}」的释义`}
-          className="z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-2rem))] flex-col rounded-xl border border-rule bg-surface font-ui shadow-[0_18px_44px_-18px_rgb(0_0_0/0.4)] data-[state=open]:animate-[fade_120ms_ease-out]"
+          data-captured={captured || undefined}
+          className="ui-wordcard z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-2rem))] flex-col rounded-xl border border-rule bg-surface font-ui shadow-[0_18px_44px_-18px_rgb(0_0_0/0.4)] data-[state=open]:animate-[fade_120ms_ease-out]"
         >
+          {/* JRPG theme only: a scan-readout banner across the top of the card. */}
+          <div className="ui-scan-banner" aria-hidden>
+            ANALYSIS // 語彙解析
+          </div>
           <header className="flex items-start gap-3 px-4 pb-2 pt-3.5">
             <div className="min-w-0 flex-1" lang={lookup.lang}>
               <p className="flex flex-wrap items-baseline gap-x-2.5">
@@ -277,12 +287,18 @@ export function WordPopover() {
               disabled={!result || !lemma}
               aria-pressed={Boolean(saved)}
               aria-label={saved ? '从生词本移除' : '加入生词本'}
+              data-en="CAPTURE"
               title={saveError ? '没保存上，请重试' : saved ? '已在生词本，点按移除' : '加入生词本'}
-              className={`mt-1 grid size-8 shrink-0 place-items-center rounded-full hover:bg-celadon-wash disabled:opacity-40 ${
+              className={`ui-capture relative mt-1 grid size-8 shrink-0 place-items-center rounded-full hover:bg-celadon-wash disabled:opacity-40 ${
                 saveError ? 'text-danger' : 'text-celadon'
               }`}
             >
               <Star size={17} fill={saved ? 'currentColor' : 'none'} />
+              {captured > 0 && saved && (
+                <span key={captured} className="ui-bam" aria-hidden>
+                  BAM!
+                </span>
+              )}
             </button>
           </header>
 
@@ -338,7 +354,8 @@ export function WordPopover() {
               <button
                 type="button"
                 onClick={() => act(() => speech.playFromSentence(lookup.sentenceId))}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+                data-en="ACT"
+                className="ui-tactic flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
               >
                 <Play size={13} /> 从这句读起
               </button>
@@ -346,7 +363,8 @@ export function WordPopover() {
                 type="button"
                 onClick={() => act(() => speech.repeatSentence(lookup.sentenceId))}
                 title={`以 ${REPEAT_RATE} 倍速重读这一句，读完自动暂停`}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+                data-en="REPEAT"
+                className="ui-tactic flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
               >
                 <Repeat1 size={13} /> 慢速跟读 {REPEAT_RATE}×
               </button>

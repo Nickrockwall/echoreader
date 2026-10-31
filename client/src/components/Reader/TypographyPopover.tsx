@@ -44,6 +44,7 @@ function Row({
 }
 
 const THEMES: { id: Theme; label: string }[] = [
+  { id: 'jrpg', label: 'JRPG' },
   { id: 'light', label: '亮色' },
   { id: 'dark', label: '纯黑' },
   { id: 'sepia', label: '羊皮纸' },
@@ -54,7 +55,7 @@ function ThemePicker() {
   const theme = useReaderStore((s) => s.theme);
   const setTheme = useReaderStore((s) => s.setTheme);
   return (
-    <div role="radiogroup" aria-label="主题" className="grid grid-cols-3 gap-2">
+    <div role="radiogroup" aria-label="主题" className="grid grid-cols-4 gap-2">
       {THEMES.map((t) => (
         <button
           key={t.id}
@@ -66,7 +67,7 @@ function ThemePicker() {
         >
           <span
             data-theme={t.id}
-            className="grid h-11 w-full place-items-center rounded-md border border-rule bg-paper font-mincho text-lg text-ink group-aria-checked:outline-2 group-aria-checked:outline-offset-2 group-aria-checked:outline-celadon"
+            className="theme-swatch grid h-11 w-full place-items-center rounded-md border border-rule bg-paper font-mincho text-lg text-ink group-aria-checked:outline-2 group-aria-checked:outline-offset-2 group-aria-checked:outline-celadon"
           >
             文
           </span>
@@ -93,7 +94,7 @@ export function TypographyPopover() {
   return (
     <Popover.Root>
       <Popover.Trigger
-        className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
+        className="ui-icon-btn grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
         aria-label="阅读设置"
       >
         <Type size={18} />

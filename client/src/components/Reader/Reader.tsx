@@ -4,8 +4,9 @@ import type { ChapterContent } from '../../../../shared/types.ts';
 import { useFurigana } from '../../hooks/useFurigana.ts';
 import { useSegmenter } from '../../hooks/useSegmenter.ts';
 import { AudioPlayer } from '../AudioPlayer/AudioPlayer.tsx';
+import { useVoiceCatalog } from '../AudioPlayer/useVoiceCatalog.ts';
 import type { Paragraph } from '../../lib/text.ts';
-import { useReaderStore } from '../../store/useReaderStore.ts';
+import { useReaderStore, voiceConfig } from '../../store/useReaderStore.ts';
 import { ParagraphView } from './ParagraphView.tsx';
 import { useTokenPicking } from './useTokenPicking.ts';
 
@@ -37,7 +38,13 @@ function AuthorNote({ label, paragraphs }: { label: string; paragraphs: Paragrap
 }
 
 export function Reader({ chapter }: { chapter: ChapterContent }) {
-  const { fontSize, lineHeight, openChapter, status, autoFurigana, vertical } = useReaderStore();
+  const { fontSize, lineHeight, openChapter, status, autoFurigana, vertical, voicePrefs } = useReaderStore();
+  const catalog = useVoiceCatalog();
+  // Drama mode draws quoted dialogue as speech bubbles labelled with the dialogue voice.
+  const dialogueId = voiceConfig(voicePrefs, chapter.lang).dialogueVoice;
+  const speaker = voicePrefs.dramaMode
+    ? (catalog?.presets.find((p) => p.id === dialogueId)?.name ?? dialogueId ?? '')
+    : undefined;
   const lang = chapter.lang;
   const labels = LABELS[lang];
   const furigana = useFurigana(chapter, autoFurigana);
@@ -91,7 +98,7 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
   
         <div className="text-ink">
           {body.map((p) => (
-            <ParagraphView key={p.id} paragraph={p} />
+            <ParagraphView key={p.id} paragraph={p} lang={lang} speaker={speaker} />
           ))}
         </div>
   
@@ -102,7 +109,7 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
             type="button"
             disabled={!chapter.prev}
             onClick={() => go(chapter.prev)}
-            className="flex items-center gap-1 rounded-md px-3 py-2 text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:invisible"
+            className="ui-ghost flex items-center gap-1 rounded-md px-3 py-2 text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:invisible"
           >
             <ChevronLeft size={16} /> {labels.prev}
           </button>
@@ -110,7 +117,7 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
             type="button"
             disabled={!chapter.next}
             onClick={() => go(chapter.next)}
-            className="flex items-center gap-1 rounded-md bg-celadon px-4 py-2 text-on-accent hover:bg-celadon-deep disabled:invisible"
+            className="ui-primary flex items-center gap-1 rounded-md bg-celadon px-4 py-2 text-on-accent hover:bg-celadon-deep disabled:invisible"
           >
             {labels.next} <ChevronRight size={16} />
           </button>

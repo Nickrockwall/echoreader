@@ -17,7 +17,7 @@ export function BookList({ books, onSelect }: { books: BookSummary[]; onSelect(b
           <button
             type="button"
             onClick={() => onSelect(book)}
-            className="flex w-full gap-4 px-6 py-4 text-left hover:bg-celadon-wash/60 focus-visible:bg-celadon-wash/60"
+            className="ui-bookrow flex w-full gap-4 px-6 py-4 text-left hover:bg-celadon-wash/60 focus-visible:bg-celadon-wash/60"
           >
             <Cover book={book} />
             <div className="min-w-0 flex-1">

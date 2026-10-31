@@ -159,13 +159,13 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
       <div
         role="region"
         aria-label="朗读控制条"
-        className="pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-x-2 gap-y-1.5 rounded-2xl sm:gap-x-3 sm:gap-y-2 border border-rule bg-surface/95 px-3 py-2.5 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.45)] backdrop-blur"
+        className="ui-player pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-x-2 gap-y-1.5 rounded-2xl sm:gap-x-3 sm:gap-y-2 border border-rule bg-surface/95 px-3 py-2.5 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.45)] backdrop-blur"
       >
         <button
           type="button"
           onClick={onPlay}
           aria-label={playing ? '暂停' : '朗读'}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-celadon text-on-accent hover:bg-celadon-deep"
+          className="ui-act grid size-11 shrink-0 place-items-center rounded-full bg-celadon text-on-accent hover:bg-celadon-deep"
         >
           {busy ? (
             <LoaderCircle size={20} className="animate-spin" />
@@ -174,6 +174,9 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
           ) : (
             <Play size={20} fill="currentColor" className="translate-x-px" />
           )}
+          <span className="ui-act-label" aria-hidden>
+            {playing ? 'PAUSE' : 'ACT'}
+          </span>
         </button>
 
         <div className="flex shrink-0 items-center">
@@ -182,7 +185,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
             aria-label="上一段"
             disabled={index <= 0}
             onClick={() => speech.playAt(index - 1)}
-            className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30"
+            className="ui-icon-btn grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30"
           >
             <SkipBack size={17} />
           </button>
@@ -191,7 +194,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
             aria-label="下一段"
             disabled={index >= count - 1}
             onClick={() => speech.playAt(index + 1)}
-            className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30"
+            className="ui-icon-btn grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30"
           >
             <SkipForward size={17} />
           </button>
@@ -202,7 +205,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
             aria-pressed={Boolean(repeating)}
             disabled={!hasSentence}
             onClick={() => speech.repeatSentence()}
-            className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30 aria-pressed:bg-lamp/30 aria-pressed:text-ink"
+            className="ui-icon-btn grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30 aria-pressed:bg-lamp/30 aria-pressed:text-ink"
           >
             <Repeat1 size={17} />
           </button>
@@ -221,10 +224,10 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
               void speech.playAt(v);
             }}
           >
-            <Slider.Track className="relative h-1 grow rounded-full bg-rule">
-              <Slider.Range className="absolute h-full rounded-full bg-celadon" />
+            <Slider.Track className="ui-gauge-track relative h-1 grow rounded-full bg-rule">
+              <Slider.Range className="ui-gauge-range absolute h-full rounded-full bg-celadon" />
             </Slider.Track>
-            <Slider.Thumb aria-label="朗读位置（段落）" className="block size-3.5 rounded-full border-2 border-celadon bg-surface" />
+            <Slider.Thumb aria-label="朗读位置（段落）" className="ui-gauge-thumb block size-3.5 rounded-full border-2 border-celadon bg-surface" />
           </Slider.Root>
           <span className="shrink-0 text-xs tabular-nums text-ink-faint">
             {shown + 1} / {count} 段
@@ -236,11 +239,11 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
           type="button"
           onClick={() => setRate(RATES[((RATES as readonly number[]).indexOf(rate) + 1) % RATES.length])}
           aria-label={`语速 ${rate}×，点按切换`}
-          className="ml-auto h-9 min-w-14 shrink-0 rounded-lg bg-paper px-2.5 text-sm tabular-nums text-ink sm:hidden"
+          className="ui-rate-cycle ml-auto h-9 min-w-14 shrink-0 rounded-lg bg-paper px-2.5 text-sm tabular-nums text-ink sm:hidden"
         >
           {rate === 1 ? '1.0' : rate}×
         </button>
-        <div role="radiogroup" aria-label="语速" className="hidden shrink-0 rounded-lg bg-paper p-0.5 text-xs sm:flex">
+        <div role="radiogroup" aria-label="语速" className="ui-rate hidden shrink-0 rounded-lg bg-paper p-0.5 text-xs sm:flex">
           {RATES.map((r) => (
             <button
               key={r}
@@ -259,7 +262,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
           type="button"
           onClick={() => setVoiceSettingsOpen(true)}
           aria-label={`音色与配音设置（当前：${voiceLabel}${voicePrefs.dramaMode ? '，广播剧模式' : ''}）`}
-          className="flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+          className="ui-icon-btn flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
         >
           <UserRound size={15} />
           <span className="hidden md:inline">{voiceLabel}</span>

@@ -73,10 +73,10 @@ function Row({
         step={1}
         onValueChange={([v]) => onChange(v / 100)}
       >
-        <Slider.Track className="relative h-1 grow rounded-full bg-rule">
-          <Slider.Range className="absolute h-full rounded-full bg-celadon" />
+        <Slider.Track className="ui-fader-track relative h-1 grow rounded-full bg-rule">
+          <Slider.Range className="ui-fader-range absolute h-full rounded-full bg-celadon" />
         </Slider.Track>
-        <Slider.Thumb aria-label={`${label}音量`} className="block size-4 rounded-full border-2 border-celadon bg-surface shadow-sm" />
+        <Slider.Thumb aria-label={`${label}音量`} className="ui-fader-thumb block size-4 rounded-full border-2 border-celadon bg-surface shadow-sm" />
       </Slider.Root>
       <span className="w-8 shrink-0 text-right text-xs tabular-nums text-ink-faint">
         {value > 0 ? Math.round(value * 100) : '关'}
@@ -95,7 +95,7 @@ export function AmbientMixer() {
       <Popover.Trigger
         // Opening the mixer is a gesture: let it wake the audio graph if ambience is already on.
         onClick={() => active && !existingGraph() && AMBIENT_IDS.forEach((id) => setAmbientVolume(id, ambient[id]))}
-        className="relative grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
+        className="ui-icon-btn relative grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
         aria-label="环境音"
       >
         <Waves size={18} />
@@ -108,7 +108,7 @@ export function AmbientMixer() {
           onCloseAutoFocus={(e) => e.preventDefault()}
           sideOffset={8}
           collisionPadding={16}
-          className="z-50 w-80 space-y-4 rounded-lg border border-rule bg-surface p-5 font-ui shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)]"
+          className="ui-mixer z-50 w-80 space-y-4 rounded-lg border border-rule bg-surface p-5 font-ui shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)]"
         >
           <p className="text-sm font-medium text-ink">环境音</p>
           {TRACKS.map((t) => (

@@ -81,7 +81,7 @@ const SECTIONS: { title: string; items: ReactNode[] }[] = [
     title: '字体与图标',
     items: [
       <>
-        Shippori Mincho、Literata、Zen Kaku Gothic New，经 Google Fonts 提供，均为{' '}
+        Shippori Mincho、Literata、Zen Kaku Gothic New，以及 JRPG 主题标题用的 Anton、Noto Sans SC，经 Google Fonts 提供，均为{' '}
         <A href="https://openfontlicense.org/">SIL Open Font License 1.1</A>。应用图标里的「読」字使用 Shippori Mincho 绘制。
       </>,
       <>

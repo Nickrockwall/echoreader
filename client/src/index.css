@@ -44,6 +44,27 @@
 }
 
 /* Parchment: warm, low-contrast paper for long sessions. */
+/*
+ * JRPG: a night-black stage with crimson and acid-yellow accents. These tokens colour the chrome;
+ * the reading page re-declares them as dark-on-paper further down.
+ */
+[data-theme='jrpg'] {
+  color-scheme: dark;
+  --paper: #0a0a0c;
+  --surface: #15151b;
+  --ink: #f5f5f7;
+  --ink-soft: #b9b9c6;
+  --ink-faint: #8c8c9a;
+  --rule: #2a2a35;
+  --celadon: #e60012;
+  --celadon-deep: #ff1a2b;
+  --celadon-wash: rgb(230 0 18 / 0.2);
+  --on-accent: #ffffff;
+  --lamp: #ffe600;
+  --danger: #ff6b76;
+  --danger-wash: #2b0e12;
+}
+
 [data-theme='sepia'] {
   color-scheme: light;
   --paper: #f1e6cd;
@@ -79,6 +100,8 @@
   --font-ui: 'Zen Kaku Gothic New', system-ui, sans-serif;
   --font-mincho: 'Shippori Mincho', 'Yu Mincho', serif;
   --font-literata: 'Literata', Georgia, serif;
+  /* Heavy poster type for labels and headings in the JRPG theme (never for body text). */
+  --font-display: 'Anton', 'Noto Sans SC', 'Zen Kaku Gothic New', Impact, sans-serif;
 }
 
 html,
@@ -284,6 +307,600 @@ body {
     transform: translateX(24px);
     opacity: 0;
   }
+}
+
+/* ---- Speech bubbles (drama mode) ------------------------------------------------ */
+
+.bubble {
+  border-radius: 0.6em;
+  padding: 0.05em 0.2em;
+  background: color-mix(in srgb, var(--celadon) 8%, transparent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.prose-reader p.bubble-block {
+  display: block;
+  position: relative;
+  text-indent: 0;
+  margin-block: 0.9em;
+  padding: 0.45em 0.9em;
+  border-radius: 0.9em;
+}
+
+/* The speaker label is a JRPG-theme decoration. */
+.bubble-tag {
+  display: none;
+}
+
+/* ================================================================================
+ * JRPG theme: hard edges, zero-blur shadows, slanted badges, halftone.
+ * Slants live on the chrome only; the reading page stays level and the highlight never
+ * changes a word's size, so long reading stays comfortable.
+ * ================================================================================ */
+
+[data-theme='jrpg'] body {
+  background-color: #0a0a0c;
+  background-image: radial-gradient(#1f1f28 18%, transparent 19%);
+  background-size: 8px 8px;
+}
+
+[data-theme='jrpg'] :focus-visible {
+  outline: 2px solid #ffe600;
+  outline-offset: 2px;
+}
+
+[data-theme='jrpg'] ::selection {
+  background: #ffe600;
+  color: #000;
+}
+
+[data-theme='jrpg'] input[type='checkbox'] {
+  accent-color: #e60012;
+}
+
+/* Any button or link press feels like a hard key. */
+[data-theme='jrpg'] button:not(:disabled):active,
+[data-theme='jrpg'] a:active {
+  transform: translate(1px, 1px);
+}
+
+/* ---- Top bar: black band, crimson rule, slanted labels ---- */
+
+[data-theme='jrpg'] .ui-topbar {
+  background: #0a0a0c;
+  border-bottom: 3px solid #e60012;
+  backdrop-filter: none;
+}
+
+[data-theme='jrpg'] .ui-lib {
+  background: #e60012;
+  color: #fff;
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+  padding-right: 1.25rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-lib:hover {
+    background: #ffe600;
+    color: #000;
+  }
+}
+
+[data-theme='jrpg'] .ui-booktitle {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+[data-theme='jrpg'] .ui-chapter-tag {
+  background: #fff;
+  color: #000;
+  padding: 0.1em 1em 0.1em 0.6em;
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+}
+
+[data-theme='jrpg'] .ui-icon-btn {
+  border-radius: 0;
+  color: #f5f5f7;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-icon-btn:hover:not(:disabled) {
+    background: #e60012;
+    color: #fff;
+  }
+}
+
+/* ---- Floating panels: popovers, dialogs, sheets ---- */
+
+[data-theme='jrpg'] [role='dialog'] {
+  border: 2px solid #f5f5f7;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #e60012;
+}
+
+[data-theme='jrpg'] [role='dialog'] h2,
+[data-theme='jrpg'] [role='dialog'] h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+
+[data-theme='jrpg'] [role='tab'][aria-selected='true'],
+[data-theme='jrpg'] [role='radiogroup'] > [role='radio'][aria-checked='true'] {
+  background: #ffe600;
+  color: #000;
+  box-shadow: 2px 2px 0 #e60012;
+}
+
+[data-theme='jrpg'] [role='tab'][aria-selected='true'] *,
+[data-theme='jrpg'] [role='radiogroup'] > [role='radio'][aria-checked='true'] * {
+  color: #000;
+}
+
+[data-theme='jrpg'] input[type='text'],
+[data-theme='jrpg'] input:not([type]) {
+  border: 2px solid #2a2a35;
+  border-radius: 0;
+  background: #0a0a0c;
+}
+
+[data-theme='jrpg'] input:not([type]):focus {
+  border-color: #ffe600;
+}
+
+/* Theme swatches show each theme's own colours; the JRPG one gets its crimson. */
+.theme-swatch[data-theme='jrpg'] {
+  background: #0a0a0c;
+  color: #fff;
+  border: 2px solid #e60012;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #e60012;
+}
+
+/* ---- Buttons ---- */
+
+[data-theme='jrpg'] .ui-primary {
+  background: #e60012;
+  color: #fff;
+  border-radius: 0;
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  transform: skewX(-8deg);
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  transition: transform 80ms ease, box-shadow 80ms ease, background-color 80ms ease;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-primary:hover:not(:disabled) {
+    background: #ffe600;
+    color: #000;
+    transform: skewX(-8deg) translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #e60012;
+  }
+}
+
+[data-theme='jrpg'] .ui-primary:active:not(:disabled) {
+  transform: skewX(-8deg) translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}
+
+[data-theme='jrpg'] .ui-ghost {
+  border-radius: 0;
+  border: 2px solid currentColor;
+  transform: skewX(-8deg);
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-ghost:hover:not(:disabled) {
+    background: #000;
+    color: #ffe600;
+  }
+}
+
+/* ---- Book list: mission cards that flip to yellow ---- */
+
+[data-theme='jrpg'] .ui-bookrow {
+  border-left: 4px solid transparent;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-bookrow:hover,
+  [data-theme='jrpg'] .ui-bookrow:focus-visible {
+    background: #ffe600;
+    border-left-color: #e60012;
+  }
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-bookrow:hover *,
+  [data-theme='jrpg'] .ui-bookrow:focus-visible * {
+    color: #000;
+  }
+}
+
+/* ---- Welcome ---- */
+
+[data-theme='jrpg'] .ui-hero {
+  font-family: var(--font-display);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.02em;
+  text-shadow: 5px 5px 0 #e60012;
+}
+
+[data-theme='jrpg'] .ui-sample {
+  border: 3px solid #000;
+  border-left: 3px solid #000;
+  background: #f5f5f7;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 8px 8px 0 #e60012;
+  --ink: #121216;
+  --ink-soft: #3d3d48;
+  --celadon-wash: rgb(230 0 18 / 0.1);
+  color: #121216;
+}
+
+/* ---- The reading page: a level sheet of paper on the dark stage ---- */
+
+[data-theme='jrpg'] .prose-reader:not(.demo) {
+  /* Dark ink on paper inside the page. */
+  color-scheme: light;
+  --ink: #121216;
+  --ink-soft: #3d3d48;
+  --ink-faint: #6e6e7a;
+  --rule: #cfcfd8;
+  --celadon-deep: #b0000e;
+  --celadon-wash: rgb(230 0 18 / 0.1);
+  --surface: #ffffff;
+  background: #f5f5f7;
+  border: 3px solid #000;
+  box-shadow: 10px 10px 0 #e60012;
+  margin-top: 2.5rem;
+  margin-bottom: 9rem;
+}
+
+@media (max-width: 639px) {
+  [data-theme='jrpg'] .prose-reader:not(.demo) {
+    margin-inline: 0.75rem;
+    margin-top: 1rem;
+    box-shadow: 5px 5px 0 #e60012;
+  }
+}
+
+[data-theme='jrpg'] .prose-reader.vertical {
+  height: calc(100dvh - 3.5rem - env(safe-area-inset-top) - 2rem);
+  width: calc(100% - 2rem);
+  margin: 1rem;
+}
+
+/* Chapter heading: the short rule becomes a slanted crimson slash. */
+[data-theme='jrpg'] .prose-reader > header > div {
+  height: 6px;
+  width: 5rem;
+  background: #e60012;
+  transform: skewX(-24deg);
+}
+
+[data-theme='jrpg'] .prose-reader > header > p {
+  display: inline-block;
+  background: #000;
+  color: #ffe600;
+  padding: 0.05em 0.7em;
+  font-style: normal;
+  transform: skewX(-10deg);
+}
+
+/* Read-along: a red-striped band under the sentence, black on acid yellow for the word. */
+[data-theme='jrpg'] [data-sid][data-reading] {
+  border-radius: 0;
+  background: repeating-linear-gradient(-45deg, rgb(230 0 18 / 0.16) 0 6px, rgb(230 0 18 / 0.06) 6px 12px);
+  box-shadow: inset 0 -2px 0 #e60012;
+}
+
+:root[data-theme='jrpg'] ::highlight(tts-word) {
+  background-color: #ffe600;
+  color: #000;
+}
+
+[data-theme='jrpg'] .tok {
+  border-radius: 0;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .tok:hover {
+    background: rgb(255 230 0 / 0.45);
+  }
+}
+
+[data-theme='jrpg'] .tok[data-picked] {
+  background: #ffe600;
+  box-shadow: inset 0 -3px 0 #e60012;
+}
+
+/* Speech bubbles: inked comic balloons; the one being read flashes and lights up. */
+[data-theme='jrpg'] .bubble {
+  background: #fff;
+  border: 2px solid #121216;
+  border-radius: 0.7em 0.15em 0.7em 0.15em;
+  box-shadow: 2px 2px 0 #121216;
+}
+
+[data-theme='jrpg'] .prose-reader p.bubble-block {
+  border-width: 2.5px;
+  box-shadow: 4px 4px 0 #121216;
+  margin-block: 1.4em;
+}
+
+[data-theme='jrpg'] .bubble-block::after {
+  content: '';
+  position: absolute;
+  left: 1.4em;
+  bottom: -11px;
+  width: 16px;
+  height: 11px;
+  background: #121216;
+  clip-path: polygon(0 0, 100% 0, 10% 100%);
+}
+
+[data-theme='jrpg'] .bubble-tag {
+  display: block;
+  position: absolute;
+  top: -0.95em;
+  left: 0.7em;
+  padding: 0.05em 0.7em;
+  background: #000;
+  color: #e60012;
+  font: 0.58em/1.5 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-indent: 0;
+  transform: skewX(-12deg) rotate(-2deg);
+}
+
+[data-theme='jrpg'] .bubble:has([data-reading]) {
+  border-color: #e60012;
+  box-shadow: 4px 4px 0 #ffe600, 4px 4px 0 2px #121216;
+  animation: bubble-flash 360ms steps(2, end) 1;
+}
+
+@keyframes bubble-flash {
+  0% {
+    background: #ffe600;
+  }
+  100% {
+    background: #fff;
+  }
+}
+
+/* ---- Player: a tactical command HUD ---- */
+
+[data-theme='jrpg'] .ui-player {
+  background: #0a0a0c;
+  border: 2px solid #f5f5f7;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #e60012;
+  backdrop-filter: none;
+}
+
+[data-theme='jrpg'] .ui-act {
+  width: 4.6rem;
+  height: 2.9rem;
+  border-radius: 0;
+  gap: 0.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e60012;
+  color: #fff;
+  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
+  transition: background-color 60ms ease, transform 60ms ease;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-act:hover {
+    background: #ffe600;
+    color: #000;
+  }
+}
+
+[data-theme='jrpg'] .ui-act:active {
+  transform: scale(0.94);
+}
+
+.ui-act-label {
+  display: none;
+}
+
+[data-theme='jrpg'] .ui-act-label {
+  display: inline;
+  font: 0.95rem/1 var(--font-display);
+  letter-spacing: 0.06em;
+}
+
+/* Progress as an HP gauge: yellow blocks over a dark hatched track. */
+[data-theme='jrpg'] .ui-gauge-track {
+  height: 12px;
+  border-radius: 0;
+  border: 1.5px solid #f5f5f7;
+  background: repeating-linear-gradient(-45deg, #2a2a35 0 3px, #15151b 3px 7px);
+}
+
+[data-theme='jrpg'] .ui-gauge-range {
+  border-radius: 0;
+  background: repeating-linear-gradient(90deg, #ffe600 0 9px, transparent 9px 11px);
+}
+
+[data-theme='jrpg'] .ui-gauge-thumb {
+  width: 10px;
+  height: 20px;
+  border-radius: 0;
+  border: 2px solid #000;
+  background: #ffe600;
+  transform: skewX(-12deg);
+}
+
+/* Speed switch: notched tabs; the selected one wears a yellow sticker. */
+[data-theme='jrpg'] .ui-rate,
+[data-theme='jrpg'] .ui-rate-cycle {
+  background: transparent;
+  border-radius: 0;
+}
+
+[data-theme='jrpg'] .ui-rate > [role='radio'] {
+  border-radius: 0;
+  border: 1.5px solid #2a2a35;
+  margin-left: -1.5px;
+  color: #b9b9c6;
+}
+
+[data-theme='jrpg'] .ui-rate > [role='radio'][aria-checked='true'] {
+  border-color: #000;
+  font-weight: 700;
+  transform: skewX(-10deg) rotate(-3deg);
+}
+
+[data-theme='jrpg'] .ui-rate-cycle {
+  background: #ffe600;
+  color: #000;
+  font-weight: 700;
+  transform: skewX(-10deg);
+  box-shadow: 2px 2px 0 #e60012;
+}
+
+/* ---- Dictionary card: a scan readout ---- */
+
+.ui-scan-banner,
+.ui-bam {
+  display: none;
+}
+
+[data-theme='jrpg'] .ui-scan-banner {
+  display: block;
+  margin: -2px -2px 0;
+  padding: 0.3rem 1rem;
+  background: #e60012;
+  color: #000;
+  font: 0.85rem/1.2 var(--font-display);
+  letter-spacing: 0.12em;
+  clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%);
+}
+
+[data-theme='jrpg'] .ui-wordcard header p:first-child > span + span {
+  color: #ffe600;
+}
+
+[data-theme='jrpg'] .ui-pos {
+  background: #000;
+  color: #fff;
+  border: 1px solid #f5f5f7;
+  padding: 0 0.4em;
+}
+
+[data-theme='jrpg'] .ui-tactic {
+  border-radius: 0;
+  border: 2px solid #f5f5f7;
+  background: #0a0a0c;
+  color: #fff;
+  transform: skewX(-8deg);
+}
+
+[data-theme='jrpg'] .ui-tactic[data-en]::before {
+  content: attr(data-en) ' /';
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  color: #ffe600;
+}
+
+@media (hover: hover) {
+  [data-theme='jrpg'] .ui-tactic:hover,
+  [data-theme='jrpg'] .ui-tactic:hover::before {
+    background: #ffe600;
+    color: #000;
+  }
+}
+
+[data-theme='jrpg'] .ui-capture[aria-pressed='true'] {
+  color: #ffe600;
+}
+
+[data-theme='jrpg'] .ui-wordcard[data-captured] {
+  animation: card-jolt 260ms ease-out 1;
+}
+
+[data-theme='jrpg'] .ui-bam {
+  display: block;
+  position: absolute;
+  right: -0.6rem;
+  top: -1.4rem;
+  font: 1.4rem/1 var(--font-display);
+  color: #e60012;
+  -webkit-text-stroke: 1.5px #000;
+  paint-order: stroke fill;
+  text-shadow: 2px 2px 0 #ffe600;
+  pointer-events: none;
+  animation: bam 700ms ease-out forwards;
+}
+
+@keyframes bam {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-14deg);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.25) rotate(-8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(-8deg) translateY(-6px);
+  }
+}
+
+@keyframes card-jolt {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  25% {
+    translate: -3px 1px;
+  }
+  60% {
+    translate: 3px -1px;
+  }
+}
+
+/* ---- Ambient mixer: warning stripes and black-and-yellow faders ---- */
+
+[data-theme='jrpg'] .ui-mixer::before {
+  content: '';
+  display: block;
+  height: 10px;
+  margin: -1.25rem -1.25rem 1rem;
+  background: repeating-linear-gradient(-45deg, #ffe600 0 10px, #000 10px 20px);
+}
+
+[data-theme='jrpg'] .ui-fader-track {
+  height: 8px;
+  border-radius: 0;
+  background: repeating-linear-gradient(-45deg, #ffe600 0 5px, #000 5px 10px);
+  border: 1.5px solid #000;
+}
+
+[data-theme='jrpg'] .ui-fader-range {
+  border-radius: 0;
+  background: #ffe600;
+}
+
+[data-theme='jrpg'] .ui-fader-thumb {
+  width: 12px;
+  height: 22px;
+  border-radius: 0;
+  border: 2px solid #ffe600;
+  background: #000;
 }
 
 @media (prefers-reduced-motion: reduce) {
