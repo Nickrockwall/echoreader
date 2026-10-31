@@ -39,7 +39,10 @@ function pickedStart(pickedTokenId: string | null) {
 function firstVisible(chunks: SpeechChunk[]) {
   const i = chunks.findIndex((c) => {
     const el = document.querySelector(`[data-pid="${c.paragraph.id}"]`);
-    return el && el.getBoundingClientRect().bottom > TOP_BAR_HEIGHT + 8;
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    // Below the top bar, and (in vertical text, which runs right to left) not off to the right.
+    return r.bottom > TOP_BAR_HEIGHT + 8 && r.left < window.innerWidth - 8;
   });
   return { index: Math.max(0, i) };
 }
@@ -295,7 +298,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
         </Popover.Root>
 
         {status === 'error' && error && (
-          <p role="alert" className="basis-full px-1 text-xs !indent-0 text-danger">
+          <p role="alert" className="basis-full px-1 text-xs text-danger">
             朗读出错：{error}。点播放键重试。
           </p>
         )}

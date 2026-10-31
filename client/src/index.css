@@ -141,7 +141,7 @@ body {
 }
 
 .prose-reader[lang='ja'] p + p {
-  margin-top: 0.15em;
+  margin-block-start: 0.15em;
 }
 
 .prose-reader[lang='en'] p + p {
@@ -149,7 +149,58 @@ body {
 }
 
 .prose-reader .scene-break {
-  height: calc(var(--reader-leading) * 1em);
+  block-size: calc(var(--reader-leading) * 1em);
+}
+
+/*
+ * 縦書き: columns run top to bottom and the page reads right to left, like a printed bunkobon.
+ * The article becomes a fixed-height pane that scrolls sideways; its bottom padding keeps the
+ * columns clear of the floating player.
+ */
+.prose-reader.vertical {
+  writing-mode: vertical-rl;
+  max-width: none;
+  width: 100%;
+  height: calc(100dvh - 3.5rem - env(safe-area-inset-top));
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  margin: 0;
+  padding: 2.5rem 2rem 7.5rem;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 639px) {
+  .prose-reader.vertical {
+    padding: 1.5rem 1.25rem 9rem;
+  }
+}
+
+.prose-reader.vertical > header {
+  margin-bottom: 0;
+  margin-block-end: 3em;
+}
+
+/* The short rule under the chapter title turns with the text. */
+.prose-reader.vertical > header > div {
+  inline-size: 4rem;
+  block-size: 1px;
+  margin-top: 0;
+  margin-block-start: 1.5rem;
+}
+
+.prose-reader.vertical > nav {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  margin-block-start: 4em;
+  padding-block-start: 1.5em;
+  border-block-start: 1px solid var(--rule);
+}
+
+/* 縦中横: one- or two-digit numbers stand upright in a single cell. */
+.prose-reader.vertical .tcy {
+  text-combine-upright: all;
 }
 
 /* Sample lines on the welcome screen: sized by their container, no indent. */

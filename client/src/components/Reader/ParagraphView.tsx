@@ -33,7 +33,8 @@ export const ParagraphView = memo(function ParagraphView({ paragraph }: { paragr
         <span key={s.id} data-sid={s.id}>
           {s.tokens.map((t) =>
             t.isWord ? (
-              <span key={t.id} className="tok" data-tok={t.id}>
+              // Short half-width numbers get .tcy so vertical text can set them upright (縦中横).
+              <span key={t.id} className={/^[0-9]{1,2}$/.test(t.surface) ? 'tok tcy' : 'tok'} data-tok={t.id}>
                 {renderSurface(t)}
               </span>
             ) : (

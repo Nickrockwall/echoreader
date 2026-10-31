@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import type { ChapterContent } from '../../../../shared/types.ts';
 import { useFurigana } from '../../hooks/useFurigana.ts';
 import { useSegmenter } from '../../hooks/useSegmenter.ts';
@@ -36,7 +37,7 @@ function AuthorNote({ label, paragraphs }: { label: string; paragraphs: Paragrap
 }
 
 export function Reader({ chapter }: { chapter: ChapterContent }) {
-  const { fontSize, lineHeight, openChapter, status, autoFurigana } = useReaderStore();
+  const { fontSize, lineHeight, openChapter, status, autoFurigana, vertical } = useReaderStore();
   const lang = chapter.lang;
   const labels = LABELS[lang];
   const furigana = useFurigana(chapter, autoFurigana);
@@ -52,51 +53,71 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
 
   const go = (index: number | null) => index && openChapter(chapter.source, chapter.bookId, index);
   const heading = splitHeading(chapter.title);
+  const isVertical = vertical && lang === 'ja';
+  const articleRef = useRef<HTMLElement>(null);
+
+  // In vertical text the page scrolls sideways; let an ordinary mouse wheel do that.
+  useEffect(() => {
+    const el = articleRef.current;
+    if (!isVertical || !el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      el.scrollBy({ left: -e.deltaY });
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [isVertical]);
 
   return (
-    <article
-      lang={lang}
-      onClick={onClick}
-      className="prose-reader mx-auto px-6 pb-32 pt-16 sm:px-10"
-      style={{ '--reader-size': `${fontSize}px`, '--reader-leading': lineHeight } as React.CSSProperties}
-      aria-busy={status === 'loading'}
-    >
-      <header className="mb-14">
-        {chapter.group && <p className="!indent-0 mb-3 font-ui text-sm text-ink-faint">{chapter.group}</p>}
-        {heading.label && <p className="!indent-0 mb-2 text-[0.95em] italic text-celadon-deep">{heading.label}</p>}
-        <h1 className="text-[1.75em] font-semibold leading-snug tracking-wide text-ink">{heading.title}</h1>
-        <div className="mt-6 h-px w-16 bg-celadon" />
-      </header>
-
-      <AuthorNote label={labels.preface} paragraphs={preface} />
-
-      <div className="text-ink">
-        {body.map((p) => (
-          <ParagraphView key={p.id} paragraph={p} />
-        ))}
-      </div>
-
-      <AuthorNote label={labels.afterword} paragraphs={afterword} />
-
-      <nav className="mt-20 flex items-center justify-between gap-4 border-t border-rule pt-6 font-ui text-sm">
-        <button
-          type="button"
-          disabled={!chapter.prev}
-          onClick={() => go(chapter.prev)}
-          className="flex items-center gap-1 rounded-md px-3 py-2 text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:invisible"
-        >
-          <ChevronLeft size={16} /> {labels.prev}
-        </button>
-        <button
-          type="button"
-          disabled={!chapter.next}
-          onClick={() => go(chapter.next)}
-          className="flex items-center gap-1 rounded-md bg-celadon px-4 py-2 text-on-accent hover:bg-celadon-deep disabled:invisible"
-        >
-          {labels.next} <ChevronRight size={16} />
-        </button>
-      </nav>
+    <>
+      <article
+        ref={articleRef}
+        lang={lang}
+        onClick={onClick}
+        data-vertical={isVertical || undefined}
+        className={`prose-reader mx-auto px-6 pb-32 pt-16 sm:px-10 ${isVertical ? 'vertical' : ''}`}
+        style={{ '--reader-size': `${fontSize}px`, '--reader-leading': lineHeight } as React.CSSProperties}
+        aria-busy={status === 'loading'}
+      >
+        <header className="mb-14">
+          {chapter.group && <p className="!indent-0 mb-3 font-ui text-sm text-ink-faint">{chapter.group}</p>}
+          {heading.label && <p className="!indent-0 mb-2 text-[0.95em] italic text-celadon-deep">{heading.label}</p>}
+          <h1 className="text-[1.75em] font-semibold leading-snug tracking-wide text-ink">{heading.title}</h1>
+          <div className="mt-6 h-px w-16 bg-celadon" />
+        </header>
+  
+        <AuthorNote label={labels.preface} paragraphs={preface} />
+  
+        <div className="text-ink">
+          {body.map((p) => (
+            <ParagraphView key={p.id} paragraph={p} />
+          ))}
+        </div>
+  
+        <AuthorNote label={labels.afterword} paragraphs={afterword} />
+  
+        <nav className="mt-20 flex items-center justify-between gap-4 border-t border-rule pt-6 font-ui text-sm">
+          <button
+            type="button"
+            disabled={!chapter.prev}
+            onClick={() => go(chapter.prev)}
+            className="flex items-center gap-1 rounded-md px-3 py-2 text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:invisible"
+          >
+            <ChevronLeft size={16} /> {labels.prev}
+          </button>
+          <button
+            type="button"
+            disabled={!chapter.next}
+            onClick={() => go(chapter.next)}
+            className="flex items-center gap-1 rounded-md bg-celadon px-4 py-2 text-on-accent hover:bg-celadon-deep disabled:invisible"
+          >
+            {labels.next} <ChevronRight size={16} />
+          </button>
+        </nav>
+      </article>
+      {/* Outside the article: it must not inherit the reading styles or vertical writing mode. */}
       <AudioPlayer chapter={chapter} paragraphs={spoken} />
-    </article>
+    </>
   );
 }

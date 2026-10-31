@@ -87,7 +87,9 @@ function TopBar() {
 /** The book's title set vertically along the left edge, like the spine of a tankōbon. */
 function Spine() {
   const book = useReaderStore((s) => s.book);
-  if (!book) return null;
+  const vertical = useReaderStore((s) => s.vertical);
+  // A vertical page uses the whole width; the spine would sit on top of the text.
+  if (!book || (vertical && book.lang === 'ja')) return null;
   return (
     <div
       aria-hidden

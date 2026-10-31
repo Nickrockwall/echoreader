@@ -50,6 +50,8 @@ interface ReaderState {
   continuous: boolean;
   /** Add generated furigana to every kanji word (Japanese). */
   autoFurigana: boolean;
+  /** Japanese chapters set top-to-bottom, right-to-left (縦書き). */
+  vertical: boolean;
   theme: Theme;
   /** Ambient track volumes, 0–1 (0 = off). */
   ambient: Record<AmbientId, number>;
@@ -71,6 +73,7 @@ interface ReaderState {
   autoplayPending: boolean;
 
   setAutoFurigana(on: boolean): void;
+  setVertical(on: boolean): void;
   setTheme(theme: Theme): void;
   setAmbient(id: AmbientId, volume: number): void;
   setVoiceVolume(volume: number): void;
@@ -106,6 +109,7 @@ export const useReaderStore = create<ReaderState>()(
       voices: { ja: VOICES.ja[0].id, en: VOICES.en[0].id },
       continuous: true,
       autoFurigana: false,
+      vertical: false,
       theme: 'light',
       ambient: { rain: 0, fire: 0, cafe: 0 },
       voiceVolume: 1,
@@ -123,6 +127,7 @@ export const useReaderStore = create<ReaderState>()(
       autoplayPending: false,
 
       setAutoFurigana: (autoFurigana) => set({ autoFurigana }),
+      setVertical: (vertical) => set({ vertical }),
       setTheme: (theme) => set({ theme }),
       setAmbient: (id, volume) => set((s) => ({ ambient: { ...s.ambient, [id]: volume } })),
       setVoiceVolume: (voiceVolume) => set({ voiceVolume }),
@@ -176,6 +181,7 @@ export const useReaderStore = create<ReaderState>()(
         voices: s.voices,
         continuous: s.continuous,
         autoFurigana: s.autoFurigana,
+        vertical: s.vertical,
         theme: s.theme,
         ambient: s.ambient,
         voiceVolume: s.voiceVolume,

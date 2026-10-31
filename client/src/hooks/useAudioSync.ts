@@ -63,9 +63,11 @@ export function useAudioSync() {
       sentenceEl = el;
       if (el && performance.now() - lastManualScroll > MANUAL_SCROLL_GRACE_MS) {
         const r = el.getBoundingClientRect();
-        if (r.top < 96 || r.bottom > window.innerHeight - 160) {
-          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
+        // Vertical text scrolls sideways, so the sentence can also leave through the left or right.
+        const offscreen =
+          r.top < 96 || r.bottom > window.innerHeight - 160 || r.left < 24 || r.right > window.innerWidth - 24;
+        // "block" follows the writing mode: vertical centring in horizontal text, horizontal in 縦書き.
+        if (offscreen) el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
       }
     };
 

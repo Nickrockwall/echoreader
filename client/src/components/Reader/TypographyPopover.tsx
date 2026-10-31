@@ -78,8 +78,17 @@ function ThemePicker() {
 }
 
 export function TypographyPopover() {
-  const { fontSize, lineHeight, setFontSize, setLineHeight, resetTypography, autoFurigana, setAutoFurigana } =
-    useReaderStore();
+  const {
+    fontSize,
+    lineHeight,
+    setFontSize,
+    setLineHeight,
+    resetTypography,
+    autoFurigana,
+    setAutoFurigana,
+    vertical,
+    setVertical,
+  } = useReaderStore();
   const lang = useReaderStore((s) => s.chapter?.lang);
   return (
     <Popover.Root>
@@ -118,6 +127,20 @@ export function TypographyPopover() {
                 type="checkbox"
                 checked={autoFurigana}
                 onChange={(e) => setAutoFurigana(e.target.checked)}
+                className="mt-1 accent-celadon"
+              />
+            </label>
+          )}
+          {lang === 'ja' && (
+            <label className="flex cursor-pointer items-start justify-between gap-3 text-sm">
+              <span>
+                <span className="block text-ink">竖排（縦書き）</span>
+                <span className="mt-0.5 block text-xs text-ink-faint">从右往左读，像纸质文库本</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={vertical}
+                onChange={(e) => setVertical(e.target.checked)}
                 className="mt-1 accent-celadon"
               />
             </label>
