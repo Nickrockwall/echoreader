@@ -1,0 +1,140 @@
+import type { Lang } from '../../../shared/types.ts';
+
+/** A ruby annotation over plain-text offsets [start, end). */
+export interface RubySpan {
+  start: number;
+  end: number;
+  reading: string;
+}
+
+export interface Token {
+  id: string;
+  /** Offsets into the paragraph's plain text. */
+  start: number;
+  end: number;
+  surface: string;
+  isWord: boolean;
+  ruby: RubySpan[];
+}
+
+export interface Sentence {
+  id: string;
+  start: number;
+  end: number;
+  text: string;
+  tokens: Token[];
+}
+
+export interface Paragraph {
+  id: string;
+  index: number;
+  /** Plain text with ruby markup removed; all offsets refer to this string. */
+  text: string;
+  isBreak: boolean;
+  ruby: RubySpan[];
+  sentences: Sentence[];
+}
+
+// ---- Ruby markup ------------------------------------------------------------
+
+const KANJI = '\\p{Script=Han}々〆ヶ';
+// ｜base《reading》, or kanji-run《kana》 without the bar (strict, so 《voice》 brackets aren't ruby).
+const RUBY_RE = new RegExp(
+  `｜([^｜《》]{1,20})《([^《》]{1,30})》|([${KANJI}]{1,20})《([\\p{Script=Hiragana}\\p{Script=Katakana}ー・]{1,20})》`,
+  'gu',
+);
+
+export function parseRuby(markup: string): { text: string; ruby: RubySpan[] } {
+  const ruby: RubySpan[] = [];
+  let text = '';
+  let last = 0;
+  for (const m of markup.matchAll(RUBY_RE)) {
+    const base = m[1] ?? m[3];
+    const reading = m[2] ?? m[4];
+    text += markup.slice(last, m.index);
+    ruby.push({ start: text.length, end: text.length + base.length, reading });
+    text += base;
+    last = m.index! + m[0].length;
+  }
+  text += markup.slice(last);
+  return { text, ruby };
+}
+
+// ---- Segmentation -----------------------------------------------------------
+
+const segmenters = new Map<string, { word: Intl.Segmenter; sentence: Intl.Segmenter }>();
+
+function segmentersFor(lang: Lang) {
+  let s = segmenters.get(lang);
+  if (!s) {
+    s = {
+      word: new Intl.Segmenter(lang, { granularity: 'word' }),
+      sentence: new Intl.Segmenter(lang, { granularity: 'sentence' }),
+    };
+    segmenters.set(lang, s);
+  }
+  return s;
+}
+
+/** Merges word tokens that a ruby span straddles, so the annotated base stays one clickable unit. */
+function mergeAcrossRuby(tokens: Omit<Token, 'id'>[], ruby: RubySpan[], text: string) {
+  const out: Omit<Token, 'id'>[] = [];
+  for (const tok of tokens) {
+    const prev = out[out.length - 1];
+    const straddles = prev && ruby.some((r) => r.start < prev.end && r.end > prev.end && r.end > tok.start);
+    if (straddles) {
+      prev.end = tok.end;
+      prev.surface = text.slice(prev.start, prev.end);
+      prev.isWord = true;
+    } else {
+      out.push({ ...tok });
+    }
+  }
+  for (const tok of out) tok.ruby = ruby.filter((r) => r.start >= tok.start && r.end <= tok.end);
+  return out;
+}
+
+const EN_ABBREVIATION = /\b(Mr|Mrs|Ms|Dr|St|Jr|Sr|Mt|Capt|Col|Gen|Lt|Rev|Prof|Hon|vs|etc|i\.e|e\.g)\.\s*$/i;
+
+/**
+ * ICU always breaks after "!"/"?" and after abbreviations. For English, re-join a fragment that
+ * continues the previous sentence: `"I shall be late!" said the Rabbit.` / `Mr. Bennet`.
+ */
+function sentenceRanges(text: string, lang: Lang): [number, number][] {
+  const ranges: [number, number][] = [];
+  for (const s of segmentersFor(lang).sentence.segment(text)) {
+    const range: [number, number] = [s.index, s.index + s.segment.length];
+    const prev = ranges[ranges.length - 1];
+    const continues =
+      lang === 'en' &&
+      prev &&
+      (/^[\s"'“”‘’(]*[a-z]/.test(s.segment) || EN_ABBREVIATION.test(text.slice(prev[0], prev[1])));
+    if (continues) prev[1] = range[1];
+    else ranges.push(range);
+  }
+  return ranges;
+}
+
+export function buildParagraph(markup: string, index: number, lang: Lang, prefix = 'p'): Paragraph {
+  const id = `${prefix}${index}`;
+  if (markup === '') return { id, index, text: '', isBreak: true, ruby: [], sentences: [] };
+
+  const { text, ruby } = parseRuby(markup);
+  const { word } = segmentersFor(lang);
+
+  const sentences: Sentence[] = [];
+  for (const [start, end] of sentenceRanges(text, lang)) {
+    const s = { segment: text.slice(start, end) };
+    const sid = `${id}s${sentences.length}`;
+    const raw = Array.from(word.segment(s.segment), (w) => ({
+      start: start + w.index,
+      end: start + w.index + w.segment.length,
+      surface: w.segment,
+      isWord: Boolean(w.isWordLike),
+      ruby: [] as RubySpan[],
+    }));
+    const tokens = mergeAcrossRuby(raw, ruby, text).map((t, k) => ({ ...t, id: `${sid}t${k}` }));
+    sentences.push({ id: sid, start, end, text: s.segment, tokens });
+  }
+  return { id, index, text, isBreak: false, ruby, sentences };
+}

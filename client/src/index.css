@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+/*
+ * Palette: cool rice paper, indigo-sumi ink, celadon accent.
+ * Lamp amber is reserved for the read-along highlight (phase 2).
+ * Themes (dark / sepia) will override these variables on [data-theme].
+ */
+:root {
+  --paper: #edefea;
+  --page: #f7f7f3;
+  --ink: #1e2330;
+  --ink-soft: #5c6370;
+  --ink-faint: #8b919b;
+  --rule: #d6dad3;
+  --celadon: #4c7e70;
+  --celadon-deep: #3b6559;
+  --celadon-wash: #dfe9e4;
+  --lamp: #e9b949;
+
+  --reader-size: 19px;
+  --reader-leading: 1.9;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-page: var(--page);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-celadon: var(--celadon);
+  --color-celadon-deep: var(--celadon-deep);
+  --color-celadon-wash: var(--celadon-wash);
+  --color-lamp: var(--lamp);
+
+  --font-ui: 'Zen Kaku Gothic New', system-ui, sans-serif;
+  --font-mincho: 'Shippori Mincho', 'Yu Mincho', serif;
+  --font-literata: 'Literata', Georgia, serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--celadon);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--celadon-wash);
+}
+
+/* ---- Reading column ---------------------------------------------------------- */
+
+.prose-reader {
+  font-size: var(--reader-size);
+  line-height: var(--reader-leading);
+}
+
+.prose-reader[lang='ja'] {
+  font-family: var(--font-mincho);
+  max-width: 38em; /* ~38 full-width characters per line */
+  letter-spacing: 0.04em;
+  line-break: strict;
+}
+
+.prose-reader[lang='en'] {
+  font-family: var(--font-literata);
+  max-width: 34em; /* ~68 characters per line */
+  hyphens: auto;
+}
+
+.prose-reader p {
+  margin: 0;
+}
+
+.prose-reader[lang='ja'] p {
+  text-indent: 1em;
+}
+
+.prose-reader[lang='ja'] p + p {
+  margin-top: 0.15em;
+}
+
+.prose-reader[lang='en'] p + p {
+  text-indent: 1.5em;
+}
+
+.prose-reader .scene-break {
+  height: calc(var(--reader-leading) * 1em);
+}
+
+/* Sample lines on the welcome screen: sized by their container, no indent. */
+.prose-reader.demo {
+  font-size: inherit;
+  line-height: 2;
+  max-width: none;
+}
+
+.prose-reader.demo p {
+  text-indent: 0;
+}
+
+.prose-reader rt {
+  font-size: 0.5em;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+}
+
+/* Each word is a target; keep the hit area tight and the feedback quiet. */
+.tok {
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.tok:hover {
+  background: var(--celadon-wash);
+}
+
+.tok[data-picked] {
+  background: var(--celadon-wash);
+  box-shadow: inset 0 -2px 0 var(--celadon);
+}
+
+.spine {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
