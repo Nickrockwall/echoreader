@@ -28,6 +28,17 @@ npm start   # 构建前端并启动；终端会打印「手机（同一 Wi-Fi）
 首次运行时 Windows 防火墙会询问是否允许 Node.js 访问网络，选「专用网络 / 允许」。
 安装到主屏幕、手机脱离电脑离线阅读需要 HTTPS（浏览器规定）；在 http 局域网地址下其余功能都正常。
 
+### HTTPS（Tailscale）
+
+电脑和手机都装 Tailscale 并登录同一账号后，在电脑上运行一次：
+
+```bash
+tailscale serve --bg 3001   # 之后一直有效，重启也保留
+```
+
+手机打开 `https://<电脑名>.<tailnet>.ts.net`（`tailscale serve status` 会显示），不必同一 Wi-Fi。
+电脑重启后双击 `scripts/windows/start-hidden.vbs` 在后台启动阅读器（日志在 `%LOCALAPPDATA%\EchoReader\server.log`）。
+
 ## 功能
 
 - 生词本（电脑和手机共用），一键导出 Anki
