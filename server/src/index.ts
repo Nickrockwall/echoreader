@@ -1,12 +1,13 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
-import type { Lang, SourceId, TtsRequest } from '../../shared/types.ts';
+import type { FuriganaRequest, Lang, SourceId, TtsRequest } from '../../shared/types.ts';
+import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
 import { audioPath, synthesize, VOICES } from './tts/edgeTTS.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
 const app = express();
-app.use(express.json({ limit: '64kb' }));
+app.use(express.json({ limit: '2mb' }));
 
 function adapter(req: Request): SourceAdapter {
   const source = sources[req.params.source as SourceId];
@@ -46,6 +47,18 @@ app.get('/api/:source/books/:id/chapters/:index', async (req, res) => {
   res.json(await adapter(req).chapter(req.params.id, positiveInt(req.params.index)));
 });
 
+app.post('/api/dict/lookup', async (req, res) => {
+  res.json(await lookup(req.body ?? {}));
+});
+
+app.post('/api/ja/furigana', async (req, res) => {
+  const { texts } = (req.body ?? {}) as Partial<FuriganaRequest>;
+  if (!Array.isArray(texts) || texts.some((t) => typeof t !== 'string')) {
+    throw new UpstreamError('需要 texts 字符串数组', 400);
+  }
+  res.json(await furigana(texts));
+});
+
 app.get('/api/tts/voices', (_req, res) => {
   res.json(VOICES);
 });
@@ -76,4 +89,5 @@ app.listen(PORT, () => {
   console.log(`EchoReader API listening on http://localhost:${PORT}`);
   // Warm the landing lists; Gutendex in particular can take tens of seconds on a cold request.
   for (const source of Object.values(sources)) source.popular(1).catch(() => {});
+  warmJapanese();
 });

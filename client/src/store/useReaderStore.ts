@@ -25,6 +25,17 @@ export const VOICES: Record<Lang, { id: string; label: string }[]> = {
   ],
 };
 
+/** The word whose dictionary card is open. */
+export interface LookupTarget {
+  tokenId: string;
+  sentenceId: string;
+  lang: Lang;
+  word: string;
+  /** Plain text of the sentence and the word's offset in it, for analysis in context. */
+  sentence: string;
+  offset: number;
+}
+
 interface ReaderState {
   // persisted
   fontSize: number;
@@ -34,6 +45,8 @@ interface ReaderState {
   voices: Record<Lang, string>;
   /** Keep reading into the next chapter when one finishes. */
   continuous: boolean;
+  /** Add generated furigana to every kanji word (Japanese). */
+  autoFurigana: boolean;
 
   // session
   book: BookDetail | null;
@@ -43,9 +56,13 @@ interface ReaderState {
   pickerOpen: boolean;
   pickerSource: SourceId;
   pickedTokenId: string | null;
+  lookup: LookupTarget | null;
   /** Set when a chapter finished playing and the next one should start by itself. */
   autoplayPending: boolean;
 
+  setAutoFurigana(on: boolean): void;
+  openLookup(target: LookupTarget): void;
+  closeLookup(): void;
   setRate(rate: Rate): void;
   setVoice(lang: Lang, voice: string): void;
   setContinuous(on: boolean): void;
@@ -73,6 +90,7 @@ export const useReaderStore = create<ReaderState>()(
       rate: 1,
       voices: { ja: VOICES.ja[0].id, en: VOICES.en[0].id },
       continuous: true,
+      autoFurigana: false,
 
       book: null,
       chapter: null,
@@ -81,8 +99,12 @@ export const useReaderStore = create<ReaderState>()(
       pickerOpen: false,
       pickerSource: 'syosetu',
       pickedTokenId: null,
+      lookup: null,
       autoplayPending: false,
 
+      setAutoFurigana: (autoFurigana) => set({ autoFurigana }),
+      openLookup: (lookup) => set({ lookup, pickedTokenId: lookup.tokenId }),
+      closeLookup: () => set({ lookup: null }),
       setRate: (rate) => set({ rate }),
       setVoice: (lang, voice) => set((s) => ({ voices: { ...s.voices, [lang]: voice } })),
       setContinuous: (continuous) => set({ continuous }),
@@ -96,7 +118,7 @@ export const useReaderStore = create<ReaderState>()(
 
       async openChapter(source, bookId, chapter) {
         const seq = ++requestSeq;
-        set({ status: 'loading', error: null, pickedTokenId: null });
+        set({ status: 'loading', error: null, pickedTokenId: null, lookup: null });
         try {
           const current = get().book;
           const book =
@@ -128,6 +150,7 @@ export const useReaderStore = create<ReaderState>()(
         rate: s.rate,
         voices: s.voices,
         continuous: s.continuous,
+        autoFurigana: s.autoFurigana,
       }),
     },
   ),

@@ -1,0 +1,235 @@
+import * as Popover from '@radix-ui/react-popover';
+import { LoaderCircle, Play, Repeat1, Volume2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import type { DictEntry, DictResult } from '../../../../shared/types.ts';
+import { api } from '../../lib/api.ts';
+import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
+import { useReaderStore, type LookupTarget } from '../../store/useReaderStore.ts';
+
+const EN_POS: Record<string, string> = {
+  noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', preposition: '介词', conjunction: '连词',
+  pronoun: '代词', interjection: '感叹词', determiner: '限定词', article: '冠词', numeral: '数词', exclamation: '感叹词',
+};
+
+const cache = new Map<string, Promise<DictResult>>();
+
+function keyOf(t: LookupTarget) {
+  // English lookups don't depend on context; Japanese ones do (reading, inflection).
+  return t.lang === 'en' ? `en|${t.word.toLowerCase()}` : `ja|${t.word}|${t.offset}|${t.sentence}`;
+}
+
+function fetchResult(t: LookupTarget) {
+  const key = keyOf(t);
+  let job = cache.get(key);
+  if (!job) {
+    job = api.lookup({ lang: t.lang, word: t.word, sentence: t.sentence, offset: t.offset });
+    job.catch(() => cache.delete(key));
+    cache.set(key, job);
+  }
+  return job;
+}
+
+// One element for word pronunciations, separate from the chapter's read-aloud audio.
+const wordAudio = new Audio();
+
+async function pronounce(result: DictResult, entry: DictEntry | undefined) {
+  if (entry?.audio) {
+    wordAudio.src = entry.audio;
+  } else {
+    // Speak the kana reading when there is one: a lone kanji is easy for TTS to misread.
+    const text = result.lang === 'ja' ? (entry?.reading ?? entry?.headword ?? result.lemma) : (entry?.headword ?? result.lemma);
+    const voice = useReaderStore.getState().voices[result.lang];
+    wordAudio.src = (await api.tts({ text, lang: result.lang, voice })).audio;
+  }
+  await wordAudio.play();
+}
+
+function Entry({ entry, lang, primary }: { entry: DictEntry; lang: 'ja' | 'en'; primary: boolean }) {
+  const senses = primary ? entry.senses.slice(0, 5) : entry.senses.slice(0, 2);
+  // Label a sense only when its part of speech differs from the one before it.
+  const labelOf = (i: number) => {
+    const key = senses[i].pos.join('|') + senses[i].notes.join('|');
+    const prev = i > 0 ? senses[i - 1].pos.join('|') + senses[i - 1].notes.join('|') : null;
+    return key !== prev;
+  };
+  return (
+    <section className={primary ? '' : 'border-t border-rule pt-3'}>
+      {!primary && (
+        <p lang={lang} className="mb-1.5 text-sm">
+          <span className={`font-semibold text-ink ${lang === 'ja' ? 'font-mincho' : 'font-literata'}`}>{entry.headword}</span>
+          {entry.reading && <span className="ml-2 text-ink-soft">{entry.reading}</span>}
+        </p>
+      )}
+      <ol className="space-y-2">
+        {senses.map((s, i) => (
+          <li key={i} className="text-sm leading-relaxed">
+            {(s.pos.length > 0 || s.notes.length > 0) && labelOf(i) && (
+              <p className="mb-0.5 flex flex-wrap gap-x-2 text-xs text-celadon-deep">
+                {s.pos.map((p) => (
+                  <span key={p}>{lang === 'en' ? (EN_POS[p] ?? p) : p}</span>
+                ))}
+                {s.notes.map((n) => (
+                  <span key={n} className="text-ink-faint">
+                    {n}
+                  </span>
+                ))}
+              </p>
+            )}
+            <p lang="en" className="text-ink">
+              {senses.length > 1 && <span className="mr-1.5 tabular-nums text-ink-faint">{i + 1}.</span>}
+              {s.glosses.join('; ')}
+            </p>
+            {s.example && (
+              <p lang="en" className="mt-0.5 font-literata text-[13px] italic text-ink-soft">
+                {s.example}
+              </p>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+export function WordPopover() {
+  const lookup = useReaderStore((s) => s.lookup);
+  const closeLookup = useReaderStore((s) => s.closeLookup);
+  const pickToken = useReaderStore((s) => s.pickToken);
+  const [state, setState] = useState<{ key: string; result?: DictResult; error?: string } | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+
+  // Anchor to the live word element so the card follows it while the page scrolls.
+  const anchor = useRef({
+    getBoundingClientRect: () =>
+      document.querySelector(`[data-tok="${useReaderStore.getState().lookup?.tokenId}"]`)?.getBoundingClientRect() ??
+      new DOMRect(),
+  });
+
+  useEffect(() => {
+    if (!lookup) return;
+    const key = keyOf(lookup);
+    let live = true;
+    setState({ key });
+    fetchResult(lookup)
+      .then((result) => live && setState({ key, result }))
+      .catch((e: Error) => live && setState({ key, error: e.message }));
+    return () => {
+      live = false;
+    };
+  }, [lookup]);
+
+  if (!lookup) return null;
+  const current = state && state.key === keyOf(lookup) ? state : null;
+  const result = current?.result;
+  const [first, ...rest] = result?.entries ?? [];
+  const readable = speech.chunkOf(lookup.sentenceId) >= 0;
+
+  const act = (fn: () => void) => {
+    // The sentence has been acted on; don't let the play button jump back to it later.
+    pickToken(null);
+    closeLookup();
+    fn();
+  };
+
+  const say = async () => {
+    if (!result) return;
+    setSpeaking(true);
+    try {
+      await pronounce(result, first);
+    } catch {
+      // Pronunciation is a nicety; a failure here needs no message.
+    } finally {
+      setSpeaking(false);
+    }
+  };
+
+  return (
+    <Popover.Root open onOpenChange={(open) => !open && closeLookup()}>
+      <Popover.Anchor virtualRef={anchor} />
+      <Popover.Portal>
+        <Popover.Content
+          side="bottom"
+          align="start"
+          sideOffset={8}
+          // Keep clear of the top bar and the floating player (two rows tall below the sm breakpoint).
+          collisionPadding={{ top: 64, bottom: window.innerWidth < 640 ? 156 : 104, left: 16, right: 16 }}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          aria-label={`「${lookup.word}」的释义`}
+          className="z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-2rem))] flex-col rounded-xl border border-rule bg-page font-ui shadow-[0_18px_44px_-18px_rgb(30_35_48/0.4)] data-[state=open]:animate-[fade_120ms_ease-out]"
+        >
+          <header className="flex items-start gap-3 px-4 pb-2 pt-3.5">
+            <div className="min-w-0 flex-1" lang={lookup.lang}>
+              <p className="flex flex-wrap items-baseline gap-x-2.5">
+                <span
+                  className={`text-[1.6rem] font-semibold leading-tight text-ink ${
+                    lookup.lang === 'ja' ? 'font-mincho' : 'font-literata'
+                  }`}
+                >
+                  {first?.headword ?? result?.lemma ?? lookup.word}
+                </span>
+                {(first?.reading ?? result?.reading) && (
+                  <span className="text-[15px] text-ink-soft">{first?.reading ?? result?.reading}</span>
+                )}
+              </p>
+              {result && (result.analysis || result.lemma !== lookup.word.toLowerCase()) && (
+                <p className="mt-1 text-xs text-ink-faint">
+                  {result.analysis ?? `${lookup.word} → ${result.lemma}`}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={say}
+              disabled={!result || speaking}
+              aria-label="朗读这个词"
+              className="mt-1 grid size-8 shrink-0 place-items-center rounded-full text-celadon hover:bg-celadon-wash disabled:opacity-40"
+            >
+              {speaking ? <LoaderCircle size={16} className="animate-spin" /> : <Volume2 size={17} />}
+            </button>
+          </header>
+
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
+            {!current?.result && !current?.error && (
+              <p className="flex items-center gap-2 py-2 text-sm text-ink-faint">
+                <LoaderCircle size={14} className="animate-spin" /> 正在查词…
+              </p>
+            )}
+            {current?.error && <p className="py-1 text-sm text-red-700">{current.error}</p>}
+            {result && !first && (
+              <p className="py-1 text-sm text-ink-soft">
+                词典里没有「{result.lemma}」。{lookup.lang === 'ja' ? '可能是人名、专有名词或少见写法。' : ''}
+              </p>
+            )}
+            {first && <Entry entry={first} lang={lookup.lang} primary />}
+            {rest.map((e, i) => (
+              <Entry key={i} entry={e} lang={lookup.lang} primary={false} />
+            ))}
+            {result && result.entries.length > 0 && (
+              <p className="text-[11px] text-ink-faint">释义来自 {result.source}</p>
+            )}
+          </div>
+
+          {readable && (
+            <footer className="flex gap-1 border-t border-rule px-2 py-1.5">
+              <button
+                type="button"
+                onClick={() => act(() => speech.playFromSentence(lookup.sentenceId))}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+              >
+                <Play size={13} /> 从这句读起
+              </button>
+              <button
+                type="button"
+                onClick={() => act(() => speech.repeatSentence(lookup.sentenceId))}
+                title={`以 ${REPEAT_RATE} 倍速重读这一句，读完自动暂停`}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+              >
+                <Repeat1 size={13} /> 慢速跟读 {REPEAT_RATE}×
+              </button>
+            </footer>
+          )}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}

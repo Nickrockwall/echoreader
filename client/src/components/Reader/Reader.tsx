@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ChapterContent } from '../../../../shared/types.ts';
+import { useFurigana } from '../../hooks/useFurigana.ts';
 import { useSegmenter } from '../../hooks/useSegmenter.ts';
 import { AudioPlayer } from '../AudioPlayer/AudioPlayer.tsx';
 import type { Paragraph } from '../../lib/text.ts';
@@ -35,13 +36,18 @@ function AuthorNote({ label, paragraphs }: { label: string; paragraphs: Paragrap
 }
 
 export function Reader({ chapter }: { chapter: ChapterContent }) {
-  const { fontSize, lineHeight, openChapter, status } = useReaderStore();
+  const { fontSize, lineHeight, openChapter, status, autoFurigana } = useReaderStore();
   const lang = chapter.lang;
   const labels = LABELS[lang];
+  const furigana = useFurigana(chapter, autoFurigana);
 
-  const preface = useSegmenter(chapter.preface, lang, 'pre');
-  const body = useSegmenter(chapter.paragraphs, lang, 'p');
-  const afterword = useSegmenter(chapter.afterword, lang, 'aft');
+  const preface = useSegmenter(chapter.preface, lang, 'pre', furigana.preface);
+  const afterword = useSegmenter(chapter.afterword, lang, 'aft', furigana.afterword);
+  // The voice follows the author's text only; furigana is display-only, so toggling it
+  // doesn't rebuild (and interrupt) the read-aloud queue.
+  const spoken = useSegmenter(chapter.paragraphs, lang, 'p');
+  const annotated = useSegmenter(furigana.body && chapter.paragraphs, lang, 'p', furigana.body);
+  const body = furigana.body ? annotated : spoken;
   const onClick = useTokenPicking([preface, body, afterword], lang);
 
   const go = (index: number | null) => index && openChapter(chapter.source, chapter.bookId, index);
@@ -90,7 +96,7 @@ export function Reader({ chapter }: { chapter: ChapterContent }) {
           {labels.next} <ChevronRight size={16} />
         </button>
       </nav>
-      <AudioPlayer chapter={chapter} paragraphs={body} />
+      <AudioPlayer chapter={chapter} paragraphs={spoken} />
     </article>
   );
 }

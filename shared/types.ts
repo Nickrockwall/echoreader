@@ -85,6 +85,58 @@ export interface TtsResult {
   words: TtsWord[];
 }
 
+// ---- Dictionary ---------------------------------------------------------------
+
+export interface DictLookupRequest {
+  lang: Lang;
+  /** The clicked word as displayed. */
+  word: string;
+  /** Sentence around the word, so Japanese can be analyzed in context (base form, reading). */
+  sentence?: string;
+  /** Offset of `word` within `sentence`. */
+  offset?: number;
+}
+
+export interface DictSense {
+  pos: string[];
+  glosses: string[];
+  /** Usage notes: "usually kana", "slang", ... */
+  notes: string[];
+  example?: string;
+}
+
+export interface DictEntry {
+  headword: string;
+  /** Japanese: kana reading. English: IPA. */
+  reading?: string;
+  /** Other written forms (Japanese) */
+  variants?: string[];
+  common?: boolean;
+  /** Pronunciation audio, when the dictionary offers one (English). */
+  audio?: string;
+  senses: DictSense[];
+}
+
+export interface DictResult {
+  lang: Lang;
+  word: string;
+  /** Dictionary form actually looked up (食べました -> 食べる, running -> run). */
+  lemma: string;
+  /** Reading of the clicked text in context (Japanese). */
+  reading?: string;
+  /** Grammatical role in context, e.g. "動詞・自立" (Japanese). */
+  analysis?: string;
+  entries: DictEntry[];
+  source: string;
+}
+
+export interface FuriganaRequest {
+  texts: string[];
+}
+
+/** Per input text, ruby spans [start, end, reading] over that text. */
+export type FuriganaResult = [number, number, string][][];
+
 export interface ApiError {
   error: string;
 }

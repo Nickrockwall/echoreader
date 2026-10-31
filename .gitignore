@@ -3,3 +3,4 @@ dist/
 server/.cache/
 *.log
 .DS_Store
+server/data/

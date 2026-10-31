@@ -8,7 +8,7 @@ function renderSurface(tok: Token): ReactNode {
   for (const r of tok.ruby) {
     if (r.start > cursor) parts.push(tok.surface.slice(cursor - tok.start, r.start - tok.start));
     parts.push(
-      <ruby key={r.start}>
+      <ruby key={r.start} data-auto={r.auto ? '' : undefined}>
         {tok.surface.slice(r.start - tok.start, r.end - tok.start)}
         <rp>(</rp>
         <rt>{r.reading}</rt>

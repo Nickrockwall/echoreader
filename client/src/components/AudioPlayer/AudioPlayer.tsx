@@ -1,21 +1,21 @@
 import * as Popover from '@radix-ui/react-popover';
 import * as Slider from '@radix-ui/react-slider';
-import { Check, LoaderCircle, Pause, Play, SkipBack, SkipForward, UserRound } from 'lucide-react';
+import { Check, LoaderCircle, Pause, Play, Repeat1, SkipBack, SkipForward, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChapterContent } from '../../../../shared/types.ts';
 import { useAudioSync, useSpeechState } from '../../hooks/useAudioSync.ts';
 import { buildChunks, type SpeechChunk } from '../../lib/speech.ts';
-import { speech } from '../../lib/speechEngine.ts';
+import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
 import type { Paragraph } from '../../lib/text.ts';
 import { RATES, useReaderStore, VOICES } from '../../store/useReaderStore.ts';
 
 const TOP_BAR_HEIGHT = 56;
 
 /** The chunk and sentence containing a picked body word, if any. */
-function pickedStart(chunks: SpeechChunk[], pickedTokenId: string | null) {
+function pickedStart(pickedTokenId: string | null) {
   const sentenceId = pickedTokenId?.match(/^(p\d+s\d+)t\d+$/)?.[1];
   if (!sentenceId) return null;
-  const index = chunks.findIndex((c) => c.sentences.some((s) => s.id === sentenceId));
+  const index = speech.chunkOf(sentenceId);
   return index >= 0 ? { index, sentenceId } : null;
 }
 
@@ -50,10 +50,10 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   useAudioSync();
 
   const onPlay = () => {
-    const pick = pickedStart(chunks, pickedTokenId);
+    const pick = pickedStart(pickedTokenId);
     if (pick && pickedTokenId !== usedPick.current && state.status !== 'playing') {
       usedPick.current = pickedTokenId;
-      void speech.playAt(pick.index, pick.sentenceId);
+      speech.playFromSentence(pick.sentenceId);
     } else {
       speech.toggle(pick ?? firstVisible(chunks));
     }
@@ -88,7 +88,8 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
     };
   }, [continuous, chapter, openChapter, setAutoplayPending]);
 
-  const { status, index, count, error } = state;
+  const { status, index, count, error, repeating } = state;
+  const hasSentence = Boolean(speech.active) && (status === 'playing' || status === 'paused');
   const busy = status === 'loading' || autoplayPending;
   const playing = status === 'playing';
   const shown = scrub ?? index;
@@ -136,6 +137,17 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
             className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30"
           >
             <SkipForward size={17} />
+          </button>
+          <button
+            type="button"
+            aria-label={`慢速重听这句（${REPEAT_RATE}×）`}
+            title={`慢速重听这句（${REPEAT_RATE}×）`}
+            aria-pressed={Boolean(repeating)}
+            disabled={!hasSentence}
+            onClick={() => speech.repeatSentence()}
+            className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink disabled:opacity-30 aria-pressed:bg-lamp/30 aria-pressed:text-ink"
+          >
+            <Repeat1 size={17} />
           </button>
         </div>
 

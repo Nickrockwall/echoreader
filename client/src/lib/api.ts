@@ -2,6 +2,9 @@ import type {
   ApiError,
   BookDetail,
   ChapterContent,
+  DictLookupRequest,
+  DictResult,
+  FuriganaResult,
   SearchResult,
   SourceId,
   TocPage,
@@ -34,10 +37,15 @@ export const api = {
     get<TocPage>(`/${source}/books/${encodeURIComponent(id)}/toc?page=${page}`),
   chapter: (source: SourceId, id: string, index: number) =>
     get<ChapterContent>(`/${source}/books/${encodeURIComponent(id)}/chapters/${index}`),
-  tts: (req: TtsRequest) =>
-    get<TtsResult>('/tts', undefined, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req),
-    }),
+  tts: (req: TtsRequest) => post<TtsResult>('/tts', req),
+  lookup: (req: DictLookupRequest, signal?: AbortSignal) => post<DictResult>('/dict/lookup', req, signal),
+  furigana: (texts: string[]) => post<FuriganaResult>('/ja/furigana', { texts }),
 };
+
+function post<T>(path: string, body: unknown, signal?: AbortSignal) {
+  return get<T>(path, signal, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}

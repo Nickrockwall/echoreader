@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Library, LoaderCircle } from 'lucide-react';
+import { WordPopover } from './components/Dictionary/WordPopover.tsx';
 import { Reader } from './components/Reader/Reader.tsx';
 import { TypographyPopover } from './components/Reader/TypographyPopover.tsx';
 import { SourcePicker } from './components/SourcePicker/SourcePicker.tsx';
@@ -99,6 +100,7 @@ export default function App() {
         </p>
       )}
       <SourcePicker />
+      <WordPopover />
     </div>
   );
 }

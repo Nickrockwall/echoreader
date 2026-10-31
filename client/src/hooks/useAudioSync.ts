@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { speech, type EngineState, type PreparedChunk } from '../lib/speechEngine.ts';
+import { lastStarted, speech, type EngineState, type PreparedChunk } from '../lib/speechEngine.ts';
 
 const WORD_HIGHLIGHT = 'tts-word';
 /** Pause auto-follow for this long after the reader scrolls by hand. */
@@ -33,21 +33,6 @@ function rangeInParagraph(p: Element, from: number, to: number): Range | null {
     pos += len;
   }
   return null;
-}
-
-/** Index of the last item whose start time is <= t, or -1. */
-function lastStarted(starts: number[], t: number) {
-  let lo = 0;
-  let hi = starts.length - 1;
-  let found = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (starts[mid] <= t) {
-      found = mid;
-      lo = mid + 1;
-    } else hi = mid - 1;
-  }
-  return found;
 }
 
 /**
@@ -107,8 +92,10 @@ export function useAudioSync() {
         return;
       }
       const t = speech.audio.currentTime * 1000;
-      const s = Math.max(0, lastStarted(prepared.sentenceStarts, t));
-      setSentence(document.querySelector(`[data-sid="${prepared.chunk.sentences[s].id}"]`));
+      // A slow repeat starts a little before its sentence; keep the highlight on that sentence.
+      const sentenceId =
+        speech.snapshot.repeating ?? prepared.chunk.sentences[Math.max(0, lastStarted(prepared.sentenceStarts, t))].id;
+      setSentence(document.querySelector(`[data-sid="${sentenceId}"]`));
       // Keep the word lit through the short gaps between words, but not after the last one ends.
       const wi = lastStarted(prepared.wordStarts, t);
       const word = prepared.words[wi];

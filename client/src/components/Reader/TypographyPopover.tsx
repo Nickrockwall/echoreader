@@ -45,7 +45,9 @@ function Row({
 }
 
 export function TypographyPopover() {
-  const { fontSize, lineHeight, setFontSize, setLineHeight, resetTypography } = useReaderStore();
+  const { fontSize, lineHeight, setFontSize, setLineHeight, resetTypography, autoFurigana, setAutoFurigana } =
+    useReaderStore();
+  const lang = useReaderStore((s) => s.chapter?.lang);
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -70,6 +72,20 @@ export function TypographyPopover() {
             step={0.1}
             onChange={setLineHeight}
           />
+          {lang === 'ja' && (
+            <label className="flex cursor-pointer items-start justify-between gap-3 border-t border-rule pt-4 text-sm">
+              <span>
+                <span className="block text-ink">给所有汉字注音</span>
+                <span className="mt-0.5 block text-xs text-ink-faint">自动生成，偶尔会读错；作者的注音优先</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={autoFurigana}
+                onChange={(e) => setAutoFurigana(e.target.checked)}
+                className="mt-1 accent-celadon"
+              />
+            </label>
+          )}
           <button type="button" onClick={resetTypography} className="text-sm text-celadon hover:text-celadon-deep">
             恢复默认
           </button>

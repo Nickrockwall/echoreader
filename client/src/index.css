@@ -118,6 +118,11 @@ body {
   color: var(--ink-soft);
 }
 
+/* Generated furigana sits back a step from the author's own. */
+.prose-reader ruby[data-auto] rt {
+  color: var(--ink-faint);
+}
+
 /* Each word is a target; keep the hit area tight and the feedback quiet. */
 .tok {
   border-radius: 3px;

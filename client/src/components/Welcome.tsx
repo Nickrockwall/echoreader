@@ -1,17 +1,16 @@
 import { BookOpen } from 'lucide-react';
-import { useState } from 'react';
 import { useSegmenter } from '../hooks/useSegmenter.ts';
 import { useReaderStore } from '../store/useReaderStore.ts';
 import { ParagraphView } from './Reader/ParagraphView.tsx';
-import { useTokenPicking, type TokenHit } from './Reader/useTokenPicking.ts';
+import { useTokenPicking } from './Reader/useTokenPicking.ts';
 
 // Public-domain openings: 夏目漱石「吾輩は猫である」, Carroll "Alice's Adventures in Wonderland".
 const SAMPLE_JA = ['｜吾輩《わがはい》は猫である。名前はまだ無い。'];
 const SAMPLE_EN = ['Alice was beginning to get very tired of sitting by her sister on the bank.'];
 
-function SampleLine({ lang, lines, onPick }: { lang: 'ja' | 'en'; lines: string[]; onPick(h: TokenHit): void }) {
+function SampleLine({ lang, lines }: { lang: 'ja' | 'en'; lines: string[] }) {
   const paragraphs = useSegmenter(lines, lang, `demo-${lang}-`);
-  const onClick = useTokenPicking([paragraphs], lang, onPick);
+  const onClick = useTokenPicking([paragraphs], lang);
   return (
     <div lang={lang} onClick={onClick} className="prose-reader demo">
       {paragraphs.map((p) => (
@@ -23,7 +22,6 @@ function SampleLine({ lang, lines, onPick }: { lang: 'ja' | 'en'; lines: string[
 
 export function Welcome() {
   const { openPicker, openChapter, lastPosition, status } = useReaderStore();
-  const [hit, setHit] = useState<TokenHit | null>(null);
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-6 py-20 sm:px-10">
@@ -33,34 +31,16 @@ export function Welcome() {
         听一句，查一个词。
       </h1>
       <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-        EchoReader 从小説家になろう 和 Project Gutenberg 载入日语、英语小说，把每个词都变成可以点的。试着点下面的词：
+        EchoReader 从小説家になろう 和 Project Gutenberg 载入日语、英语小说，每个词都能点开查释义。试着点下面的词：
       </p>
 
       <section className="mt-12 space-y-6 border-l-2 border-celadon pl-6">
         <div className="text-[clamp(1.35rem,3.2vw,1.75rem)]">
-          <SampleLine lang="ja" lines={SAMPLE_JA} onPick={setHit} />
+          <SampleLine lang="ja" lines={SAMPLE_JA} />
         </div>
         <div className="text-[clamp(1.15rem,2.6vw,1.4rem)]">
-          <SampleLine lang="en" lines={SAMPLE_EN} onPick={setHit} />
+          <SampleLine lang="en" lines={SAMPLE_EN} />
         </div>
-        <p className="min-h-[1.5rem] text-sm text-ink-soft" aria-live="polite">
-          {hit ? (
-            <>
-              <span lang={hit.lang} className="font-medium text-ink">
-                {hit.token.surface}
-              </span>
-              {hit.token.ruby.length > 0 && <span className="ml-2">{hit.token.ruby.map((r) => r.reading).join('')}</span>}
-              <span className="ml-3 text-ink-faint">
-                {hit.token.end - hit.token.start === 1
-                  ? `第 ${hit.token.end} 字`
-                  : `第 ${hit.token.start + 1}–${hit.token.end} 字`}
-                ，完整信息已打印到浏览器控制台
-              </span>
-            </>
-          ) : (
-            <span className="text-ink-faint">词典气泡会在阶段 3 加入；现在点击会显示分词结果。</span>
-          )}
-        </p>
       </section>
 
       <div className="mt-14 flex flex-wrap gap-3 font-ui">

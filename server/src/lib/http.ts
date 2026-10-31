@@ -6,6 +6,7 @@ const HOST_INTERVAL_MS: Record<string, number> = {
   'ncode.syosetu.com': 1000,
   'api.syosetu.com': 300,
   'www.gutenberg.org': 500,
+  'api.dictionaryapi.dev': 100,
 };
 
 const nextSlot = new Map<string, number>();

@@ -39,7 +39,8 @@ function buildChunk(paragraph: Paragraph, sentences: Sentence[], k: number): Spe
   };
 
   for (const r of paragraph.ruby) {
-    if (r.start < start || r.end > end) continue;
+    // Generated furigana can misread (何 なに/なん); only the author's readings steer the voice.
+    if (r.auto || r.start < start || r.end > end) continue;
     // Emphasis dots and decorative glosses are not pronunciations; only kana readings are.
     if (!KANA_READING.test(r.reading)) continue;
     plain(r.start);

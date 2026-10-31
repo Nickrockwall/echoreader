@@ -11,12 +11,12 @@ export interface TokenHit {
 }
 
 /**
- * Click-to-pick for word spans rendered by ParagraphView. Uses event delegation and toggles
+ * Click-to-look-up for word spans rendered by ParagraphView. Uses event delegation and toggles
  * the [data-picked] attribute directly, so picking a word never re-renders the chapter.
  */
-export function useTokenPicking(blocks: Paragraph[][], lang: Lang, onPick?: (hit: TokenHit) => void) {
+export function useTokenPicking(blocks: Paragraph[][], lang: Lang) {
   const pickedTokenId = useReaderStore((s) => s.pickedTokenId);
-  const pickToken = useReaderStore((s) => s.pickToken);
+  const openLookup = useReaderStore((s) => s.openLookup);
 
   const index = useMemo(() => {
     const map = new Map<string, TokenHit>();
@@ -32,22 +32,19 @@ export function useTokenPicking(blocks: Paragraph[][], lang: Lang, onPick?: (hit
     const el = document.querySelector(`[data-tok="${pickedTokenId}"]`);
     el?.setAttribute('data-picked', '');
     return () => el?.removeAttribute('data-picked');
-  }, [pickedTokenId]);
+  }, [pickedTokenId, index]);
 
   return (e: MouseEvent) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-tok]');
     const hit = el && index.get(el.dataset.tok!);
     if (!hit) return;
-    pickToken(hit.token.id);
-    console.log('[EchoReader] token', {
-      surface: hit.token.surface,
-      lang,
-      ruby: hit.token.ruby.map((r) => r.reading),
-      offsets: [hit.token.start, hit.token.end],
+    openLookup({
       tokenId: hit.token.id,
+      sentenceId: hit.sentence.id,
+      lang,
+      word: hit.token.surface,
       sentence: hit.sentence.text,
-      paragraph: hit.paragraph.index,
+      offset: hit.token.start - hit.sentence.start,
     });
-    onPick?.(hit);
   };
 }

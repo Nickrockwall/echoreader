@@ -27,10 +27,32 @@ export interface EngineState {
   index: number;
   count: number;
   error: string | null;
+  /** Sentence being replayed slowly, if a repeat is in progress. */
+  repeating: string | null;
 }
 
 const PREFETCH_AHEAD = 3;
 const KEEP_BEHIND = 2;
+/** Start a little early so the first word isn't clipped. */
+const LEAD_IN_MS = 80;
+/** Let the last word ring out before a repeat stops. */
+const TAIL_MS = 250;
+export const REPEAT_RATE = 0.8;
+
+/** Index of the last item whose start time is <= t, or -1 (binary search over sorted starts). */
+export function lastStarted(starts: number[], t: number) {
+  let lo = 0;
+  let hi = starts.length - 1;
+  let found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (starts[mid] <= t) {
+      found = mid;
+      lo = mid + 1;
+    } else hi = mid - 1;
+  }
+  return found;
+}
 
 function sentenceStarts(chunk: SpeechChunk, words: TimedWord[]): number[] {
   const starts: number[] = [];
@@ -53,7 +75,11 @@ class SpeechEngine {
   private prepared = new Map<number, Promise<PreparedChunk>>();
   private generation = 0;
   private current: PreparedChunk | null = null;
-  private state: EngineState = { status: 'idle', index: 0, count: 0, error: null };
+  private rate = 1;
+  /** Audio time (ms) at which a sentence repeat stops. */
+  private repeatEnd: number | null = null;
+  private repeatFrame = 0;
+  private state: EngineState = { status: 'idle', index: 0, count: 0, error: null, repeating: null };
   private listeners = new Set<(s: EngineState) => void>();
   /** Fired when the last chunk finishes. */
   onChapterEnd: (() => void) | null = null;
@@ -117,8 +143,65 @@ class SpeechEngine {
   }
 
   setRate(rate: number) {
+    this.rate = rate;
     this.audio.defaultPlaybackRate = rate; // survives src changes
-    this.audio.playbackRate = rate;
+    if (this.repeatEnd === null) this.audio.playbackRate = rate;
+  }
+
+  // ---- sentences ----
+
+  /** Index of the chunk containing a sentence, or -1 (e.g. author notes aren't read aloud). */
+  chunkOf(sentenceId: string) {
+    return this.chunks.findIndex((c) => c.sentences.some((s) => s.id === sentenceId));
+  }
+
+  /** The sentence under the playhead. */
+  currentSentence(): string | null {
+    const p = this.current;
+    if (!p) return null;
+    const i = Math.max(0, lastStarted(p.sentenceStarts, this.audio.currentTime * 1000));
+    return p.chunk.sentences[i]?.id ?? null;
+  }
+
+  playFromSentence(sentenceId: string) {
+    const index = this.chunkOf(sentenceId);
+    if (index >= 0) void this.start(index, sentenceId, false);
+  }
+
+  /** Replays one sentence at REPEAT_RATE, then pauses at its end (shadowing practice). */
+  repeatSentence(sentenceId = this.currentSentence()) {
+    const index = sentenceId ? this.chunkOf(sentenceId) : -1;
+    if (index >= 0) void this.start(index, sentenceId!, true);
+  }
+
+  private sentenceWindow(p: PreparedChunk, sentenceId: string): [number, number] {
+    const i = p.chunk.sentences.findIndex((s) => s.id === sentenceId);
+    if (i < 0) return [0, Number.POSITIVE_INFINITY];
+    const s = p.chunk.sentences[i];
+    const spoken = p.words.filter((w) => w.from >= s.start && w.from < s.end);
+    const from = Math.max(0, p.sentenceStarts[i] - LEAD_IN_MS);
+    const to = spoken.length
+      ? spoken[spoken.length - 1].end + TAIL_MS
+      : (p.sentenceStarts[i + 1] ?? Number.POSITIVE_INFINITY);
+    return [from, to];
+  }
+
+  private watchRepeat = () => {
+    if (this.repeatEnd === null) return;
+    if (this.audio.currentTime * 1000 >= this.repeatEnd) {
+      this.audio.pause();
+      this.endRepeat();
+      return;
+    }
+    this.repeatFrame = requestAnimationFrame(this.watchRepeat);
+  };
+
+  private endRepeat() {
+    if (this.repeatEnd === null && !this.state.repeating) return;
+    cancelAnimationFrame(this.repeatFrame);
+    this.repeatEnd = null;
+    this.audio.playbackRate = this.rate;
+    this.set({ repeating: null });
   }
 
   private prepare(index: number): Promise<PreparedChunk> {
@@ -165,26 +248,38 @@ class SpeechEngine {
 
   // ---- transport ----
 
-  /** Plays chunk `index` from its start, or from the start of `sentenceId` within it. */
-  async playAt(index: number, sentenceId?: string) {
+  /** Plays chunk `index` from its start. */
+  playAt(index: number) {
+    return this.start(index, undefined, false);
+  }
+
+  private async start(index: number, sentenceId: string | undefined, repeat: boolean) {
     if (!this.chunks.length) return;
     index = Math.max(0, Math.min(index, this.chunks.length - 1));
     const gen = ++this.generation;
+    this.endRepeat();
     this.audio.pause();
-    this.set({ status: 'loading', index, error: null });
+    this.set({ status: 'loading', index, error: null, repeating: repeat ? (sentenceId ?? null) : null });
     this.prefetchAround(index);
     try {
       const prepared = await this.prepare(index);
       if (gen !== this.generation) return;
-      this.current = prepared;
-      this.audio.src = prepared.url;
-      const s = sentenceId ? prepared.chunk.sentences.findIndex((x) => x.id === sentenceId) : -1;
-      // Back off slightly so the first word isn't clipped.
-      this.audio.currentTime = s > 0 ? Math.max(0, prepared.sentenceStarts[s] - 80) / 1000 : 0;
+      if (this.current !== prepared) {
+        this.current = prepared;
+        this.audio.src = prepared.url;
+      }
+      const [from, to] = sentenceId ? this.sentenceWindow(prepared, sentenceId) : [0, Number.POSITIVE_INFINITY];
+      this.audio.currentTime = from / 1000;
+      // Set after src: loading a source resets playbackRate to defaultPlaybackRate.
+      this.audio.playbackRate = repeat ? REPEAT_RATE : this.rate;
+      if (repeat) this.repeatEnd = to;
       await this.audio.play();
-      if (gen === this.generation) this.set({ status: 'playing' });
+      if (gen !== this.generation) return;
+      this.set({ status: 'playing' });
+      if (repeat) this.repeatFrame = requestAnimationFrame(this.watchRepeat);
     } catch (err) {
       if (gen !== this.generation) return;
+      this.endRepeat();
       const e = err as Error;
       // Autoplay policy: the browser wants a user gesture first. Leave it paused at this chunk.
       if (e.name === 'NotAllowedError') this.set({ status: 'paused' });
@@ -198,17 +293,21 @@ class SpeechEngine {
     switch (status) {
       case 'playing':
         this.audio.pause();
+        this.endRepeat();
         break;
       case 'loading':
         this.generation++;
+        this.endRepeat();
         this.set({ status: this.current ? 'paused' : 'idle' });
         break;
       case 'paused':
-        if (this.current) void this.audio.play();
+        // A repeat of a chunk's last sentence can leave the audio at its very end.
+        if (this.current && this.audio.ended) this.advance();
+        else if (this.current) void this.audio.play();
         else void this.playAt(index);
         break;
       case 'idle':
-        void this.playAt(start.index, start.sentenceId);
+        void this.start(start.index, start.sentenceId, false);
         break;
       case 'ended':
         void this.playAt(0);
@@ -225,6 +324,7 @@ class SpeechEngine {
 
   stop() {
     this.generation++;
+    this.endRepeat();
     this.audio.pause();
     this.audio.removeAttribute('src');
     this.current = null;
@@ -232,6 +332,12 @@ class SpeechEngine {
   }
 
   private advance() {
+    if (this.repeatEnd !== null) {
+      // The repeated sentence ran to the end of its chunk: stop here, don't move on.
+      this.endRepeat();
+      this.set({ status: 'paused' });
+      return;
+    }
     const next = this.state.index + 1;
     if (next < this.chunks.length) {
       void this.playAt(next);
@@ -244,3 +350,6 @@ class SpeechEngine {
 }
 
 export const speech = new SpeechEngine();
+
+// Handle for inspecting playback from the console and browser tests (dev builds only).
+if (import.meta.env.DEV) (window as unknown as { __speech: SpeechEngine }).__speech = speech;

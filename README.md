@@ -6,7 +6,8 @@
 
 ```bash
 npm install
-npm run dev        # 同时启动后端 :3001 和前端 :5173
+npm run setup:dict -w server   # 首次：下载 JMdict 并生成 server/data/jmdict.sqlite（日语查词用，约 60 MB）
+npm run dev                    # 同时启动后端 :3001 和前端 :5173
 ```
 
 浏览器打开 http://localhost:5173 。
