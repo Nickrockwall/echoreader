@@ -19,7 +19,7 @@ EchoReader 的代码以 [MIT](LICENSE) 授权。下面列出应用使用的第�
 - **英文释义**：[英文维基词典](https://en.wiktionary.org/) 贡献者，经 [Free Dictionary API](https://dictionaryapi.dev/) 获取，CC BY-SA 3.0；单词发音录音来自 Wikimedia Commons，各自的许可显示在查词卡片上
 - **小説家になろう**：作品版权属于各位作者；本应用只供在自己的设备上阅读，请遵守 [利用規約](https://syosetu.com/site/rule/)
 - **Project Gutenberg**：书籍在美国属于公有领域，经 [Gutendex](https://gutendex.com/) 检索。「Project Gutenberg」是其注册商标；本应用显示正文前会去掉原书附带的许可声明，与 Project Gutenberg 无关联
-- **朗读**：Microsoft Edge 的在线朗读服务，经 [node-edge-tts](https://github.com/SchneeHertz/node-edge-tts)（MIT）；这不是微软面向第三方的正式服务
+- **朗读**：Microsoft Edge 的在线朗读服务（Azure 神经网络声线，如 Nanami、Keita、Jenny、Ryan），经 [node-edge-tts](https://github.com/SchneeHertz/node-edge-tts)（MIT）；这不是微软面向第三方的正式服务。「元气少女」等预设是调整音调的变体，并非独立声线
 - **字体**：Shippori Mincho、Literata、Zen Kaku Gothic New，经 Google Fonts，[SIL Open Font License 1.1](https://openfontlicense.org/)
 
 ## 主要依赖

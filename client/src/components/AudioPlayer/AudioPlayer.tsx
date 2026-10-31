@@ -1,6 +1,5 @@
-import * as Popover from '@radix-ui/react-popover';
 import * as Slider from '@radix-ui/react-slider';
-import { Check, LoaderCircle, Pause, Play, Repeat1, SkipBack, SkipForward, UserRound } from 'lucide-react';
+import { LoaderCircle, Pause, Play, Repeat1, SkipBack, SkipForward, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChapterContent } from '../../../../shared/types.ts';
 import { useAudioSync, useSpeechState } from '../../hooks/useAudioSync.ts';
@@ -8,7 +7,9 @@ import { buildChunks, type SpeechChunk } from '../../lib/speech.ts';
 import { existingGraph } from '../../lib/audioGraph.ts';
 import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
 import type { Paragraph } from '../../lib/text.ts';
-import { RATES, useReaderStore, VOICES } from '../../store/useReaderStore.ts';
+import { RATES, useReaderStore, voiceConfig } from '../../store/useReaderStore.ts';
+import { useVoiceCatalog } from './useVoiceCatalog.ts';
+import { VoiceSettingsModal } from './VoiceSettingsModal.tsx';
 
 const TOP_BAR_HEIGHT = 56;
 const SEEK_MS = 5000;
@@ -53,8 +54,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   const {
     rate,
     setRate,
-    voices,
-    setVoice,
+    voicePrefs,
     continuous,
     autoplayPending,
     setAutoplayPending,
@@ -63,6 +63,8 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   } = useReaderStore();
   const lang = chapter.lang;
   const [scrub, setScrub] = useState<number | null>(null);
+  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+  const catalog = useVoiceCatalog();
   // A word picked after the last play start redirects the next play to its sentence.
   const usedPick = useRef<string | null>(null);
 
@@ -116,7 +118,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   // A fresh queue per chapter (the Reader is keyed by chapter, so this runs once per chapter).
   useEffect(() => {
     const initial = useReaderStore.getState();
-    speech.load(chunks, lang, initial.voices[lang]);
+    speech.load(chunks, lang, voiceConfig(initial.voicePrefs, lang));
     speech.setRate(initial.rate);
     if (initial.autoplayPending) void speech.playAt(0);
     return () => speech.stop();
@@ -129,7 +131,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   }, [state.status, setAutoplayPending]);
 
   useEffect(() => speech.setRate(rate), [rate]);
-  useEffect(() => speech.setVoice(voices[lang]), [voices, lang]);
+  useEffect(() => speech.setVoice(voiceConfig(voicePrefs, lang)), [voicePrefs, lang]);
 
   useEffect(() => {
     speech.onChapterEnd = () => {
@@ -147,7 +149,8 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
   const busy = status === 'loading' || autoplayPending;
   const playing = status === 'playing';
   const shown = scrub ?? index;
-  const voiceLabel = VOICES[lang].find((v) => v.id === voices[lang])?.label ?? voices[lang];
+  const narrationId = voiceConfig(voicePrefs, lang).voice;
+  const voiceLabel = catalog?.presets.find((p) => p.id === narrationId)?.name ?? '声线';
 
   if (!count) return null;
 
@@ -231,7 +234,7 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
         {/* Phones: one button that cycles the speeds, so the controls fit a single row. */}
         <button
           type="button"
-          onClick={() => setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length])}
+          onClick={() => setRate(RATES[((RATES as readonly number[]).indexOf(rate) + 1) % RATES.length])}
           aria-label={`语速 ${rate}×，点按切换`}
           className="ml-auto h-9 min-w-14 shrink-0 rounded-lg bg-paper px-2.5 text-sm tabular-nums text-ink sm:hidden"
         >
@@ -252,50 +255,21 @@ export function AudioPlayer({ chapter, paragraphs }: { chapter: ChapterContent; 
           ))}
         </div>
 
-        <Popover.Root>
-          <Popover.Trigger
-            className="flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
-            aria-label={`声线：${voiceLabel}`}
-          >
-            <UserRound size={15} />
-            <span className="hidden md:inline">{voiceLabel.split(' · ')[0]}</span>
-          </Popover.Trigger>
-          <Popover.Portal>
-            <Popover.Content
-              side="top"
-              align="end"
-              // Return focus to the page, not this trigger, so Space keeps meaning play/pause.
-              onCloseAutoFocus={(e) => e.preventDefault()}
-              sideOffset={10}
-              className="z-50 w-56 rounded-lg border border-rule bg-surface p-1.5 font-ui shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)]"
-            >
-              <div role="radiogroup" aria-label="声线">
-                {VOICES[lang].map((v) => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={voices[lang] === v.id}
-                    onClick={() => setVoice(lang, v.id)}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-ink hover:bg-celadon-wash"
-                  >
-                    {v.label}
-                    {voices[lang] === v.id && <Check size={15} className="text-celadon" />}
-                  </button>
-                ))}
-              </div>
-              <label className="mt-1 flex cursor-pointer items-center justify-between border-t border-rule px-3 pb-1.5 pt-2.5 text-sm text-ink-soft">
-                读完自动下一章
-                <input
-                  type="checkbox"
-                  checked={continuous}
-                  onChange={(e) => useReaderStore.getState().setContinuous(e.target.checked)}
-                  className="accent-celadon"
-                />
-              </label>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+        <button
+          type="button"
+          onClick={() => setVoiceSettingsOpen(true)}
+          aria-label={`音色与配音设置（当前：${voiceLabel}${voicePrefs.dramaMode ? '，广播剧模式' : ''}）`}
+          className="flex h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-ink-soft hover:bg-celadon-wash hover:text-ink"
+        >
+          <UserRound size={15} />
+          <span className="hidden md:inline">{voiceLabel}</span>
+          {voicePrefs.dramaMode && (
+            <span className="rounded bg-lamp/30 px-1 text-[10px] leading-4 text-ink" aria-hidden>
+              剧
+            </span>
+          )}
+        </button>
+        <VoiceSettingsModal open={voiceSettingsOpen} onOpenChange={setVoiceSettingsOpen} lang={lang} />
 
         {status === 'error' && error && (
           <p role="alert" className="basis-full px-1 text-xs text-danger">

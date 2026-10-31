@@ -1,6 +1,8 @@
 // EchoReader service worker: makes the reader installable and keeps what you've read available offline.
 // Only registered in production builds and in secure contexts (localhost or HTTPS).
 
+// Changing this wipes the caches (including books saved for offline reading); only bump it when
+// their format changes. A new sw.js installs on its own whenever the file changes.
 const VERSION = 'v1';
 const SHELL = `shell-${VERSION}`;
 const ASSETS = `assets-${VERSION}`;
@@ -9,7 +11,7 @@ const DATA = `data-${VERSION}`;
 const SHELL_FILES = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 /** POST endpoints whose answers depend only on the body: cache them under a key derived from it. */
-const CACHEABLE_POSTS = ['/api/tts', '/api/dict/lookup', '/api/ja/furigana'];
+const CACHEABLE_POSTS = ['/api/tts', '/api/tts/preview', '/api/dict/lookup', '/api/ja/furigana'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES)).then(() => self.skipWaiting()));

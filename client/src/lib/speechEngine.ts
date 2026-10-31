@@ -20,6 +20,14 @@ export interface PreparedChunk {
   sentenceStarts: number[];
 }
 
+/** Voices for a chapter: narration preset, and in drama mode a second preset for quoted dialogue. */
+export interface VoiceConfig {
+  voice: string | undefined;
+  dialogueVoice?: string;
+  drama: boolean;
+  pitch: number;
+}
+
 export type PlayStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'ended' | 'error';
 
 export interface EngineState {
@@ -71,7 +79,7 @@ class SpeechEngine {
   readonly audio = new Audio();
   private chunks: SpeechChunk[] = [];
   private lang: Lang = 'ja';
-  private voice: string | undefined;
+  private voice: VoiceConfig = { voice: undefined, drama: false, pitch: 0 };
   private prepared = new Map<number, Promise<PreparedChunk>>();
   private generation = 0;
   private current: PreparedChunk | null = null;
@@ -120,7 +128,7 @@ class SpeechEngine {
 
   // ---- queue ----
 
-  load(chunks: SpeechChunk[], lang: Lang, voice: string | undefined) {
+  load(chunks: SpeechChunk[], lang: Lang, voice: VoiceConfig) {
     this.stop();
     this.chunks = chunks;
     this.lang = lang;
@@ -128,12 +136,15 @@ class SpeechEngine {
     this.set({ status: 'idle', index: 0, count: chunks.length, error: null });
   }
 
-  setVoice(voice: string) {
-    if (voice === this.voice) return;
+  /** New voices (or drama mode, or pitch): already synthesized audio no longer applies. */
+  setVoice(voice: VoiceConfig) {
+    if (JSON.stringify(voice) === JSON.stringify(this.voice)) return;
     this.voice = voice;
     const resume = this.state.status === 'playing' || this.state.status === 'loading';
+    const sentence = this.currentSentence();
     this.dropPrepared();
-    if (resume) void this.playAt(this.state.index);
+    // Pick up again at the sentence being read, in the new voice.
+    if (resume) void (sentence ? this.playFromSentence(sentence) : this.playAt(this.state.index));
     else if (this.current) {
       // Keep the position; the next play re-synthesizes this chunk in the new voice.
       this.current = null;
@@ -235,7 +246,7 @@ class SpeechEngine {
     if (!job) {
       const chunk = this.chunks[index];
       job = (async () => {
-        const result = await api.tts({ text: chunk.text, lang: this.lang, voice: this.voice });
+        const result = await api.tts({ text: chunk.text, lang: this.lang, ...this.voice });
         const blob = await (await fetch(result.audio)).blob();
         const words = result.words.map((w) => {
           const [from, to] = chunk.toSource(w.offset, w.length);

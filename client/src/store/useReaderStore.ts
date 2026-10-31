@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { BookDetail, ChapterContent, Lang, SourceId } from '../../../shared/types.ts';
 import type { AmbientId } from '../lib/ambient.ts';
+import type { VoiceConfig } from '../lib/speechEngine.ts';
 import { api } from '../lib/api.ts';
 
 export type Theme = 'light' | 'dark' | 'sepia';
@@ -14,18 +15,47 @@ export interface ReadingPosition {
   title: string;
 }
 
-export const RATES = [0.8, 1, 1.25] as const;
-export type Rate = (typeof RATES)[number];
+/** Quick speed buttons on the player; the settings panel allows anything from MIN_RATE to MAX_RATE. */
+export const RATES = [0.8, 1, 1.25, 1.5] as const;
+export const MIN_RATE = 0.8;
+export const MAX_RATE = 1.5;
 
-export const VOICES: Record<Lang, { id: string; label: string }[]> = {
-  ja: [
-    { id: 'ja-JP-NanamiNeural', label: 'Nanami · 女声' },
-    { id: 'ja-JP-KeitaNeural', label: 'Keita · 男声' },
-  ],
-  en: [
-    { id: 'en-US-JennyNeural', label: 'Jenny · 美式女声' },
-    { id: 'en-GB-RyanNeural', label: 'Ryan · 英式男声' },
-  ],
+export interface VoicePreferences {
+  /** Drama mode: quoted dialogue is read in its own voice. */
+  dramaMode: boolean;
+  narrationVoiceJa: string;
+  dialogueVoiceJa: string;
+  narrationVoiceEn: string;
+  dialogueVoiceEn: string;
+  /** Pitch offset in percent applied to every voice (-20 … 20). */
+  pitch: number;
+}
+
+export const DEFAULT_VOICE_PREFS: VoicePreferences = {
+  dramaMode: false,
+  narrationVoiceJa: 'ja-nanami',
+  dialogueVoiceJa: 'ja-genki',
+  narrationVoiceEn: 'en-jenny',
+  dialogueVoiceEn: 'en-aria',
+  pitch: 0,
+};
+
+/** What the synthesis request needs for a chapter in `lang`. */
+export function voiceConfig(prefs: VoicePreferences, lang: Lang): VoiceConfig {
+  return {
+    voice: lang === 'ja' ? prefs.narrationVoiceJa : prefs.narrationVoiceEn,
+    dialogueVoice: lang === 'ja' ? prefs.dialogueVoiceJa : prefs.dialogueVoiceEn,
+    drama: prefs.dramaMode,
+    pitch: prefs.pitch,
+  };
+}
+
+/** Presets used to be stored as plain Edge voice names. */
+const LEGACY_VOICES: Record<string, string> = {
+  'ja-JP-NanamiNeural': 'ja-nanami',
+  'ja-JP-KeitaNeural': 'ja-keita',
+  'en-US-JennyNeural': 'en-jenny',
+  'en-GB-RyanNeural': 'en-ryan',
 };
 
 /** The word whose dictionary card is open. */
@@ -44,8 +74,9 @@ interface ReaderState {
   fontSize: number;
   lineHeight: number;
   lastPosition: ReadingPosition | null;
-  rate: Rate;
-  voices: Record<Lang, string>;
+  /** Playback speed (MIN_RATE … MAX_RATE), applied in the browser so it changes instantly. */
+  rate: number;
+  voicePrefs: VoicePreferences;
   /** Keep reading into the next chapter when one finishes. */
   continuous: boolean;
   /** Add generated furigana to every kanji word (Japanese). */
@@ -83,8 +114,9 @@ interface ReaderState {
   setCreditsOpen(open: boolean): void;
   openLookup(target: LookupTarget): void;
   closeLookup(): void;
-  setRate(rate: Rate): void;
-  setVoice(lang: Lang, voice: string): void;
+  setRate(rate: number): void;
+  setVoicePrefs(patch: Partial<VoicePreferences>): void;
+  resetVoicePrefs(): void;
   setContinuous(on: boolean): void;
   setAutoplayPending(on: boolean): void;
   setFontSize(size: number): void;
@@ -108,7 +140,7 @@ export const useReaderStore = create<ReaderState>()(
       lineHeight: DEFAULT_LINE_HEIGHT,
       lastPosition: null,
       rate: 1,
-      voices: { ja: VOICES.ja[0].id, en: VOICES.en[0].id },
+      voicePrefs: DEFAULT_VOICE_PREFS,
       continuous: true,
       autoFurigana: false,
       vertical: false,
@@ -140,7 +172,8 @@ export const useReaderStore = create<ReaderState>()(
       openLookup: (lookup) => set({ lookup, pickedTokenId: lookup.tokenId }),
       closeLookup: () => set({ lookup: null }),
       setRate: (rate) => set({ rate }),
-      setVoice: (lang, voice) => set((s) => ({ voices: { ...s.voices, [lang]: voice } })),
+      setVoicePrefs: (patch) => set((s) => ({ voicePrefs: { ...s.voicePrefs, ...patch } })),
+      resetVoicePrefs: () => set({ voicePrefs: DEFAULT_VOICE_PREFS }),
       setContinuous: (continuous) => set({ continuous }),
       setAutoplayPending: (autoplayPending) => set({ autoplayPending }),
       setFontSize: (fontSize) => set({ fontSize }),
@@ -177,12 +210,27 @@ export const useReaderStore = create<ReaderState>()(
     }),
     {
       name: 'echoreader',
+      // v1: one Edge voice name per language (`voices`) became VoicePreferences presets.
+      version: 1,
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Record<string, unknown>;
+        if (version < 1) {
+          const old = (state.voices ?? {}) as Partial<Record<Lang, string>>;
+          state.voicePrefs = {
+            ...DEFAULT_VOICE_PREFS,
+            narrationVoiceJa: LEGACY_VOICES[old.ja ?? ''] ?? DEFAULT_VOICE_PREFS.narrationVoiceJa,
+            narrationVoiceEn: LEGACY_VOICES[old.en ?? ''] ?? DEFAULT_VOICE_PREFS.narrationVoiceEn,
+          };
+          delete state.voices;
+        }
+        return state as unknown as ReaderState;
+      },
       partialize: (s) => ({
         fontSize: s.fontSize,
         lineHeight: s.lineHeight,
         lastPosition: s.lastPosition,
         rate: s.rate,
-        voices: s.voices,
+        voicePrefs: s.voicePrefs,
         continuous: s.continuous,
         autoFurigana: s.autoFurigana,
         vertical: s.vertical,

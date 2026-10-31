@@ -3,13 +3,13 @@ import { existsSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FuriganaRequest, Lang, SourceId, TtsRequest } from '../../shared/types.ts';
+import type { FuriganaRequest, Lang, SourceId } from '../../shared/types.ts';
 import { ensureDictionaries } from './dict/bootstrap.ts';
 import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
 import { cancelOffline, offlineStatus, startOffline } from './sources/offline.ts';
-import { audioPath, synthesize, VOICES } from './tts/edgeTTS.ts';
+import { ttsRoute } from './routes/ttsRoute.ts';
 import { deleteVocab, listVocab, saveVocab, vocabToAnki } from './user/vocab.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -104,25 +104,7 @@ app.get('/api/vocab/export', (req, res) => {
   res.send(vocabToAnki(lang));
 });
 
-app.get('/api/tts/voices', (_req, res) => {
-  res.json(VOICES);
-});
-
-app.post('/api/tts', async (req, res) => {
-  const { text, lang, voice } = (req.body ?? {}) as Partial<TtsRequest>;
-  if (typeof text !== 'string' || (lang !== 'ja' && lang !== 'en')) {
-    throw new UpstreamError('需要 text 和 lang（ja 或 en）', 400);
-  }
-  res.json(await synthesize(text, lang as Lang, voice));
-});
-
-app.get('/api/tts/audio/:file', (req, res, next) => {
-  const id = req.params.file.replace(/\.mp3$/, '');
-  // Content-addressed: the same id always means the same audio.
-  res.sendFile(audioPath(id), { headers: { 'Content-Type': 'audio/mpeg' }, maxAge: '365d', immutable: true, dotfiles: 'allow' }, (err) => {
-    if (err) next(new UpstreamError('音频不存在或已被清理', 404));
-  });
-});
+app.use('/api/tts', ttsRoute);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: '没有这个接口' });

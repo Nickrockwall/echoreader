@@ -3,7 +3,7 @@ import { Download, Trash2, Volume2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { Lang, VocabItem } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
-import { useReaderStore } from '../../store/useReaderStore.ts';
+import { useReaderStore, voiceConfig } from '../../store/useReaderStore.ts';
 import { useVocabStore } from '../../store/useVocabStore.ts';
 
 type Filter = 'all' | Lang;
@@ -17,8 +17,9 @@ const FILTERS: { id: Filter; label: string }[] = [
 const sentenceAudio = new Audio();
 
 async function speakSentence(v: VocabItem) {
-  const voice = useReaderStore.getState().voices[v.lang];
-  sentenceAudio.src = (await api.tts({ text: v.sentence, lang: v.lang, voice })).audio;
+  // The sentence is read the way the chapter would be, drama voices included.
+  const config = voiceConfig(useReaderStore.getState().voicePrefs, v.lang);
+  sentenceAudio.src = (await api.tts({ text: v.sentence, lang: v.lang, ...config })).audio;
   await sentenceAudio.play();
 }
 

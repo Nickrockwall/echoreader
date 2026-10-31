@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Credit, DictEntry, DictResult } from '../../../../shared/types.ts';
 import { api } from '../../lib/api.ts';
 import { REPEAT_RATE, speech } from '../../lib/speechEngine.ts';
-import { useReaderStore, type LookupTarget } from '../../store/useReaderStore.ts';
+import { useReaderStore, voiceConfig, type LookupTarget } from '../../store/useReaderStore.ts';
 import { useVocabStore, vocabKey } from '../../store/useVocabStore.ts';
 
 const EN_POS: Record<string, string> = {
@@ -39,8 +39,9 @@ async function pronounce(result: DictResult, entry: DictEntry | undefined) {
   } else {
     // Speak the kana reading when there is one: a lone kanji is easy for TTS to misread.
     const text = result.lang === 'ja' ? (entry?.reading ?? entry?.headword ?? result.lemma) : (entry?.headword ?? result.lemma);
-    const voice = useReaderStore.getState().voices[result.lang];
-    wordAudio.src = (await api.tts({ text, lang: result.lang, voice })).audio;
+    const { voicePrefs } = useReaderStore.getState();
+    const voice = voiceConfig(voicePrefs, result.lang).voice;
+    wordAudio.src = (await api.tts({ text, lang: result.lang, voice, pitch: voicePrefs.pitch })).audio;
   }
   await wordAudio.play();
 }

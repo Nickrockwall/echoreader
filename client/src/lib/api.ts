@@ -10,8 +10,10 @@ import type {
   SearchResult,
   SourceId,
   TocPage,
+  TtsPreviewRequest,
   TtsRequest,
   TtsResult,
+  VoiceCatalog,
   VocabInput,
   VocabItem,
 } from '../../../shared/types.ts';
@@ -42,6 +44,8 @@ export const api = {
   chapter: (source: SourceId, id: string, index: number) =>
     get<ChapterContent>(`/${source}/books/${encodeURIComponent(id)}/chapters/${index}`),
   tts: (req: TtsRequest) => post<TtsResult>('/tts', req),
+  voices: () => get<VoiceCatalog>('/tts/voices'),
+  preview: (req: TtsPreviewRequest) => post<TtsResult>('/tts/preview', req),
   lookup: (req: DictLookupRequest, signal?: AbortSignal) => post<DictResult>('/dict/lookup', req, signal),
   furigana: (texts: string[]) => post<FuriganaResult>('/ja/furigana', { texts }),
   offline: {

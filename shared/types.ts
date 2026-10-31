@@ -71,10 +71,44 @@ export interface TtsWord {
   end: number;
 }
 
+export interface VoicePreset {
+  /** Stable id stored in preferences, e.g. "ja-genki". */
+  id: string;
+  lang: Lang;
+  name: string;
+  description: string;
+  /** Edge read-aloud voice behind the preset. */
+  voice: string;
+  /** Pitch offset in percent, applied through SSML prosody. */
+  pitch: number;
+  gender: 'female' | 'male';
+  styleTags: string[];
+  /** Works, but quality is not native (multilingual voices reading Japanese). */
+  experimental?: boolean;
+}
+
+export interface VoiceCatalog {
+  presets: VoicePreset[];
+  /** A local VOICEVOX engine answered on its default port (synthesis is not wired up yet). */
+  voicevox: { available: boolean; version?: string };
+}
+
 export interface TtsRequest {
   text: string;
   lang: Lang;
+  /** Narration preset id (legacy: an Edge voice name). */
   voice?: string;
+  /** Drama mode: quoted dialogue is read by `dialogueVoice`, the rest by `voice`. */
+  drama?: boolean;
+  dialogueVoice?: string;
+  /** Extra pitch offset in percent on top of the presets' own (-20 … 20). */
+  pitch?: number;
+}
+
+export interface TtsPreviewRequest {
+  voice: string;
+  lang: Lang;
+  pitch?: number;
 }
 
 export interface TtsResult {
