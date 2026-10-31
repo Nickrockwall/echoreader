@@ -6,10 +6,15 @@
 
 ```bash
 npm install
-npm run setup:dict -w server   # 首次：生成日语词典（约 1 分钟，需联网）
-                               #   server/data/jmdict.sqlite  JMdict 日英（约 60 MB）
-                               #   server/data/ja-zh.sqlite   维基词典日中（约 18 MB，CC BY-SA）
-npm run dev                    # 同时启动后端 :3001 和前端 :5173
+npm run dev     # 同时启动后端 :3001 和前端 :5173
+```
+
+日语词典随仓库提供（`server/dict-data/`，压缩后约 29 MB），首次启动自动解压，无需联网。
+想更新到最新数据时运行 `npm run setup:dict -w server`。来源与许可见 `server/dict-data/README.md`。
+
+```bash
+# （可选）更新词典到最新版
+npm run setup:dict -w server
 ```
 
 浏览器打开 http://localhost:5173 。

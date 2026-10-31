@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "setup:dict": "tsx scripts/build-jmdict.ts && tsx scripts/build-zhdict.ts",
+    "setup:dict": "tsx scripts/build-jmdict.ts && tsx scripts/build-zhdict.ts && tsx scripts/pack-dict.ts",
+    "pack:dict": "tsx scripts/pack-dict.ts",
     "setup:dict:zh": "tsx scripts/build-zhdict.ts"
   },
   "dependencies": {

@@ -4,6 +4,7 @@ import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FuriganaRequest, Lang, SourceId, TtsRequest } from '../../shared/types.ts';
+import { ensureDictionaries } from './dict/bootstrap.ts';
 import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
@@ -149,6 +150,9 @@ function lanAddresses() {
     .filter((i): i is NonNullable<typeof i> => Boolean(i && i.family === 'IPv4' && !i.internal))
     .map((i) => i.address);
 }
+
+// A fresh checkout unpacks the committed dictionaries before the first lookup can arrive.
+await ensureDictionaries();
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`EchoReader listening on http://localhost:${PORT}`);
