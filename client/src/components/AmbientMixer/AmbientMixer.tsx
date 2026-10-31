@@ -1,7 +1,7 @@
-import * as Popover from '@radix-ui/react-popover';
+import * as Dialog from '@radix-ui/react-dialog';
 import * as Slider from '@radix-ui/react-slider';
-import { CloudRain, Coffee, Flame, Mic, Waves } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { CloudRain, Coffee, Flame, Mic, Waves, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { setAmbientVolume, type AmbientId } from '../../lib/ambient.ts';
 import { existingGraph, setDucking, setVoiceVolume } from '../../lib/audioGraph.ts';
 import { useReaderStore } from '../../store/useReaderStore.ts';
@@ -88,46 +88,66 @@ function Row({
 export function AmbientMixer() {
   const { ambient, setAmbient, voiceVolume, setVoiceVolume: setVoice, ducking, setDucking: setDuck } =
     useReaderStore();
+  const [open, setOpen] = useState(false);
   const active = AMBIENT_IDS.some((id) => ambient[id] > 0);
 
+  const openMixer = () => {
+    // Opening the mixer is a gesture: let it wake the audio graph if ambience is already on.
+    if (active && !existingGraph()) AMBIENT_IDS.forEach((id) => setAmbientVolume(id, ambient[id]));
+    setOpen(true);
+  };
+
   return (
-    <Popover.Root>
-      <Popover.Trigger
-        // Opening the mixer is a gesture: let it wake the audio graph if ambience is already on.
-        onClick={() => active && !existingGraph() && AMBIENT_IDS.forEach((id) => setAmbientVolume(id, ambient[id]))}
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <button
+        type="button"
+        onClick={openMixer}
         className="ui-icon-btn relative grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
         aria-label="环境音"
       >
         <Waves size={18} />
         {active && <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-celadon" aria-hidden />}
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          align="end"
-          // Return focus to the page, not this trigger, so Space keeps meaning play/pause.
+      </button>
+      <Dialog.Portal>
+        {/* Light overlay: the drawer is often adjusted while listening, the page stays visible. */}
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/20 data-[state=open]:animate-[fade_160ms_ease-out]" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          // Return focus to the page, not the trigger, so Space keeps meaning play/pause.
           onCloseAutoFocus={(e) => e.preventDefault()}
-          sideOffset={8}
-          collisionPadding={16}
-          className="ui-mixer z-50 w-80 space-y-4 rounded-lg border border-rule bg-surface p-5 font-ui shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)]"
+          className="ui-mixer fixed inset-y-0 right-0 z-50 flex w-[min(22rem,calc(100vw-2.5rem))] flex-col bg-surface pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] font-ui shadow-[-8px_0_40px_-16px_rgb(0_0_0/0.35)] focus:outline-none data-[state=open]:animate-[sheet-right_220ms_cubic-bezier(.2,.8,.2,1)]"
         >
-          <p className="text-sm font-medium text-ink">环境音</p>
-          {TRACKS.map((t) => (
-            <Row key={t.id} icon={t.icon} label={t.label} value={ambient[t.id]} onChange={(v) => setAmbient(t.id, v)} />
-          ))}
-          <div className="space-y-4 border-t border-rule pt-4">
-            <Row icon={<Mic size={16} />} label="人声" value={voiceVolume} onChange={setVoice} />
-            <label className="flex cursor-pointer items-center justify-between text-sm text-ink-soft">
-              朗读时压低环境音
-              <input
-                type="checkbox"
-                checked={ducking}
-                onChange={(e) => setDuck(e.target.checked)}
-                className="accent-celadon"
-              />
-            </label>
+          <header className="flex items-center justify-between px-5 pb-2 pt-5">
+            <Dialog.Title className="text-base font-medium text-ink">环境音</Dialog.Title>
+            <Dialog.Close
+              aria-label="关闭"
+              className="grid size-9 place-items-center rounded-md text-ink-soft hover:bg-celadon-wash hover:text-ink"
+            >
+              <X size={18} />
+            </Dialog.Close>
+          </header>
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pb-6 pt-3">
+            {TRACKS.map((t) => (
+              <Row key={t.id} icon={t.icon} label={t.label} value={ambient[t.id]} onChange={(v) => setAmbient(t.id, v)} />
+            ))}
+            <div className="space-y-5 border-t border-rule pt-5">
+              <Row icon={<Mic size={16} />} label="人声" value={voiceVolume} onChange={setVoice} />
+              <label className="flex cursor-pointer items-center justify-between text-sm text-ink-soft">
+                朗读时压低环境音
+                <input
+                  type="checkbox"
+                  checked={ducking}
+                  onChange={(e) => setDuck(e.target.checked)}
+                  className="accent-celadon"
+                />
+              </label>
+            </div>
+            <p className="text-xs leading-relaxed text-ink-faint">
+              雨声和壁炉声由浏览器实时合成；咖啡馆是一段公有领域录音。关掉面板后声音继续播放。
+            </p>
           </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

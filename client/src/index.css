@@ -875,11 +875,18 @@ body {
 
 /* ---- Ambient mixer: warning stripes and black-and-yellow faders ---- */
 
+/* The mixer is a drawer on the right: hard shadow off its left edge, warning stripes across the top. */
+[data-theme='jrpg'] .ui-mixer {
+  border: none;
+  border-left: 3px solid #f5f5f7;
+  box-shadow: -6px 0 0 #e60012;
+}
+
 [data-theme='jrpg'] .ui-mixer::before {
   content: '';
   display: block;
-  height: 10px;
-  margin: -1.25rem -1.25rem 1rem;
+  flex: none;
+  height: 12px;
   background: repeating-linear-gradient(-45deg, #ffe600 0 10px, #000 10px 20px);
 }
 
