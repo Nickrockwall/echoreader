@@ -19,10 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-This license covers the source code. Bundled data keeps its own terms:
-- server/dict-data/*.sqlite.gz — JMdict and Chinese Wiktionary data, CC BY-SA 4.0
-  (see server/dict-data/README.md)
-- client/public/ambient/cafe.ogg — public domain (see client/public/ambient/ATTRIBUTION.md)

@@ -64,7 +64,7 @@ Windows 上可以双击 `scripts/windows/start-hidden.vbs` 在后台运行阅读
 
 ## 数据与许可
 
-- 代码：[MIT](LICENSE)
+- 代码：[MIT](LICENSE)（只针对代码；下面这些随附数据保留各自的许可）
 - 日语词典：JMdict（EDRDG）与中文维基词典，CC BY-SA 4.0，详见 [`server/dict-data/README.md`](server/dict-data/README.md)。想更新到最新数据可运行 `npm run setup:dict -w server`
 - 咖啡馆环境音：公有领域录音，详见 [`client/public/ambient/ATTRIBUTION.md`](client/public/ambient/ATTRIBUTION.md)；雨声、壁炉声由浏览器实时合成
 
