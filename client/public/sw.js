@@ -75,6 +75,8 @@ self.addEventListener('fetch', (event) => {
       event.respondWith(cacheFirst(request, ASSETS));
     } else if (url.pathname.startsWith('/api/tts/audio/')) {
       event.respondWith(cacheFirst(request, DATA)); // content-addressed: never changes
+    } else if (url.pathname.startsWith('/api/auth/')) {
+      // Sign-in state must come from the server, never from a cached answer.
     } else if (url.pathname.startsWith('/api/')) {
       event.respondWith(networkFirst(request, DATA));
     }

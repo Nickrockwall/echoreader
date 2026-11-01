@@ -48,6 +48,23 @@ npm start
 
 Windows 上可以双击 `scripts/windows/start-hidden.vbs` 在后台运行阅读器（不弹窗口）。
 
+## 部署到云服务器（不用开电脑）
+
+想让手机随时能用、电脑不必开着，可以把 EchoReader 装到一台云服务器上，比如 Oracle Cloud 的永久免费实例（Ubuntu）。服务器上会启用**访问密码**，只有知道密码的人能用，所以它仍是你的私人书房，不是公开网站。
+
+在服务器上运行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Nickrockwall/echoreader/main/scripts/cloud/setup.sh | sudo bash
+```
+
+脚本会安装 Node.js 和 Caddy，下载并构建代码，设置开机自启。它还会用 `你的IP.sslip.io` 这个免费域名自动申请 HTTPS 证书，这样手机才能把阅读器装成应用。运行过程中会让你设一个访问密码；之后再运行同一条命令就是更新到最新版。
+
+- 云平台的防火墙要放行 TCP 80 和 443（Oracle 的「安全列表」里加两条入站规则）。
+- 生词本和导入的书保存在服务器的 `/opt/echoreader/server/data`。
+- 用自己的域名：首次安装前设 `ECHOREADER_DOMAIN=你的域名`，并把域名解析到服务器 IP。
+- 在自己电脑上运行时没有密码，用法和以前一样；需要时可以设环境变量 `ECHOREADER_PASSWORD` 开启。
+
 ## 快捷键
 
 | 键 | 作用 |

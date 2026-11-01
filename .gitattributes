@@ -1,6 +1,1 @@
-* text=auto eol=lf
-*.gz binary
-*.png binary
-*.ogg binary
-*.cmd text eol=crlf
-*.vbs text eol=crlf
+*.sh text eol=lf

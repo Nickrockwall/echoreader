@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { FuriganaRequest, Lang, SourceId } from '../../shared/types.ts';
 import { ensureDictionaries } from './dict/bootstrap.ts';
 import { furigana, lookup, warmJapanese } from './dict/lookup.ts';
+import { authRequired, login, requireAuth, status as authStatus } from './lib/auth.ts';
 import { UpstreamError } from './lib/http.ts';
 import { sources, type SourceAdapter } from './sources/index.ts';
 import { deleteBook, importBook, MAX_IMPORT_BYTES } from './sources/local.ts';
@@ -14,7 +15,11 @@ import { ttsRoute } from './routes/ttsRoute.ts';
 import { deleteVocab, listVocab, saveVocab, vocabToAnki } from './user/vocab.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
+/** 0.0.0.0 lets phones on the same Wi-Fi in; a cloud server behind Caddy sets HOST=127.0.0.1. */
+const HOST = process.env.HOST ?? '0.0.0.0';
 const app = express();
+// Behind a reverse proxy (Caddy on a cloud server) for HTTPS: trust it for the client address.
+app.set('trust proxy', 'loopback');
 app.use(express.json({ limit: '2mb' }));
 
 function adapter(req: Request): SourceAdapter {
@@ -34,6 +39,10 @@ function positiveInt(value: unknown, fallback = 1) {
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
+
+app.get('/api/auth/status', authStatus);
+app.post('/api/auth/login', login);
+app.use('/api', requireAuth);
 
 // Local import: the file is the request body; its name and an optional language come in the query.
 app.post('/api/local/import', express.raw({ type: () => true, limit: MAX_IMPORT_BYTES }), (req, res) => {
@@ -154,9 +163,9 @@ function lanAddresses() {
 // A fresh checkout unpacks the committed dictionaries before the first lookup can arrive.
 await ensureDictionaries();
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`EchoReader listening on http://localhost:${PORT}`);
-  if (existsSync(CLIENT_DIST)) {
+app.listen(PORT, HOST, () => {
+  console.log(`EchoReader listening on http://localhost:${PORT}${authRequired ? '（已启用访问密码）' : ''}`);
+  if (existsSync(CLIENT_DIST) && HOST === '0.0.0.0') {
     for (const ip of lanAddresses()) console.log(`  手机（同一 Wi-Fi）打开：http://${ip}:${PORT}`);
   }
   // Warm the landing lists; Gutendex in particular can take tens of seconds on a cold request.

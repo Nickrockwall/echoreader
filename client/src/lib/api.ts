@@ -18,6 +18,8 @@ import type {
   VocabItem,
 } from '../../../shared/types.ts';
 
+export const SIGNED_OUT_EVENT = 'echoreader:signed-out';
+
 async function get<T>(path: string, signal?: AbortSignal, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -27,7 +29,9 @@ async function get<T>(path: string, signal?: AbortSignal, init?: RequestInit): P
     throw new Error('连不上本地服务。请确认后端已用 npm run dev 启动。');
   }
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as ApiError | null;
+    const body = (await res.json().catch(() => null)) as (ApiError & { auth?: boolean }) | null;
+    // The session ended (password changed on the server): show the sign-in screen.
+    if (res.status === 401 && body?.auth) window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
     throw new Error(body?.error ?? `请求失败（HTTP ${res.status}）`);
   }
   return res.json() as Promise<T>;
@@ -47,6 +51,10 @@ export const api = {
   voices: () => get<VoiceCatalog>('/tts/voices'),
   preview: (req: TtsPreviewRequest) => post<TtsResult>('/tts/preview', req),
   lookup: (req: DictLookupRequest, signal?: AbortSignal) => post<DictResult>('/dict/lookup', req, signal),
+  auth: {
+    status: () => get<{ required: boolean; signedIn: boolean }>('/auth/status'),
+    login: (password: string) => post<{ required: boolean; signedIn: boolean }>('/auth/login', { password }),
+  },
   furigana: (texts: string[]) => post<FuriganaResult>('/ja/furigana', { texts }),
   offline: {
     status: (source: SourceId, id: string) => get<OfflineStatus>(`/${source}/books/${encodeURIComponent(id)}/offline`),
